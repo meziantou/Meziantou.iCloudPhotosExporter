@@ -20,6 +20,13 @@ struct AppMenuCommands: Commands {
             Button(viewModel.isSchedulerPaused ? "Resume Scheduler" : "Pause Scheduler") {
                 viewModel.setSchedulerPaused(!viewModel.isSchedulerPaused)
             }
+
+            Divider()
+
+            Button("Quit iCloud Exporter") {
+                viewModel.quitApplication()
+            }
+            .keyboardShortcut("q", modifiers: .command)
         }
     }
 }
