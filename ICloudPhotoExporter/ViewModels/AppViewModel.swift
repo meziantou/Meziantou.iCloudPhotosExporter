@@ -9,6 +9,11 @@ struct SyncErrorLogEntry: Identifiable {
     let message: String
 }
 
+private struct LibrarySyncOutcome: Sendable {
+    let result: LibrarySyncResult?
+    let errorDetail: String?
+}
+
 @MainActor
 final class AppViewModel: ObservableObject {
     @Published var configuration: AppConfiguration = .default
@@ -22,9 +27,21 @@ final class AppViewModel: ObservableObject {
     @Published var isCheckingForUpdates: Bool = false
     @Published var updateCheckResult: UpdateCheckResult?
     @Published var updateCheckError: String?
+    @Published var syncCopiedFileCount: Int = 0
+    @Published var syncCurrentFileName: String?
+    @Published var syncCurrentLibraryName: String?
+    @Published var syncRecentCopiedFiles: [String] = []
 
     var currentAppVersion: String {
         updateCheckService.currentVersion
+    }
+
+    var menuBarTitle: String {
+        if isSyncing {
+            return "Sync \(syncCopiedFileCount)"
+        }
+
+        return "iCloud Exporter"
     }
 
     private let configurationStore = ConfigurationStore()
@@ -275,21 +292,54 @@ final class AppViewModel: ObservableObject {
 
         isSyncing = true
         errorMessage = nil
+        syncCopiedFileCount = 0
+        syncCurrentFileName = nil
+        syncCurrentLibraryName = nil
+        syncRecentCopiedFiles = []
+        lastRunSummary = "Syncing…"
+
+        let exportEngine = self.exportEngine
+        let outcomes = await withTaskGroup(of: LibrarySyncOutcome.self, returning: [LibrarySyncOutcome].self) { group in
+            for library in enabledLibraries {
+                group.addTask {
+                    do {
+                        let result = try await exportEngine.synchronize(library: library) { update in
+                            await MainActor.run { [weak self] in
+                                self?.recordSyncProgress(update)
+                            }
+                        }
+
+                        return LibrarySyncOutcome(result: result, errorDetail: nil)
+                    } catch {
+                        let detail = "Sync failed for \(library.name): \(error.localizedDescription)"
+                        return LibrarySyncOutcome(result: nil, errorDetail: detail)
+                    }
+                }
+            }
+
+            var outcomes: [LibrarySyncOutcome] = []
+            outcomes.reserveCapacity(enabledLibraries.count)
+            for await outcome in group {
+                outcomes.append(outcome)
+            }
+
+            return outcomes
+        }
 
         var totalExported = 0
         var totalSkipped = 0
         var failedLibraryErrors: [String] = []
 
-        for library in enabledLibraries {
-            do {
-                let result = try await exportEngine.synchronize(library: library)
+        for outcome in outcomes {
+            if let result = outcome.result {
                 totalExported += result.exportedCount
                 totalSkipped += result.skippedCount
-            } catch {
-                let detail = "Sync failed for \(library.name): \(error.localizedDescription)"
-                failedLibraryErrors.append(detail)
-                appendErrorLog(detail)
-                logger.error("Sync failed for \(library.name, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+
+            if let errorDetail = outcome.errorDetail {
+                failedLibraryErrors.append(errorDetail)
+                appendErrorLog(errorDetail)
+                logger.error("\(errorDetail, privacy: .public)")
             }
         }
 
@@ -349,6 +399,28 @@ final class AppViewModel: ObservableObject {
         errorLogEntries.insert(SyncErrorLogEntry(timestamp: .now, message: message), at: 0)
         if errorLogEntries.count > 100 {
             errorLogEntries.removeLast(errorLogEntries.count - 100)
+        }
+    }
+
+    private func recordSyncProgress(_ update: ExportProgressUpdate) {
+        syncCurrentLibraryName = update.libraryName
+        syncCurrentFileName = update.fileName
+
+        switch update.state {
+        case .copying:
+            break
+        case .copied:
+            syncCopiedFileCount += 1
+            syncRecentCopiedFiles.insert("\(update.libraryName): \(update.fileName)", at: 0)
+            if syncRecentCopiedFiles.count > 8 {
+                syncRecentCopiedFiles.removeLast(syncRecentCopiedFiles.count - 8)
+            }
+        }
+
+        if syncCopiedFileCount == 1 {
+            lastRunSummary = "Syncing… copied 1 file."
+        } else {
+            lastRunSummary = "Syncing… copied \(syncCopiedFileCount) files."
         }
     }
 }

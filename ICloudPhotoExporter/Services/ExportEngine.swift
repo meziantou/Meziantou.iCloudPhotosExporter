@@ -3,11 +3,42 @@ import OSLog
 import Photos
 import UniformTypeIdentifiers
 
-struct LibrarySyncResult {
+struct LibrarySyncResult: Sendable {
     let libraryID: UUID
     let libraryName: String
     let exportedCount: Int
     let skippedCount: Int
+}
+
+enum ExportProgressState: Sendable {
+    case copying
+    case copied
+}
+
+struct ExportProgressUpdate: Sendable {
+    let libraryID: UUID
+    let libraryName: String
+    let fileName: String
+    let destinationPath: String
+    let state: ExportProgressState
+}
+
+private struct AssetExportWorkItem: Sendable {
+    let localIdentifier: String
+    let existingRecord: ExportedAssetRecord?
+}
+
+private struct AssetExportOutcome: Sendable {
+    let localIdentifier: String
+    let exportedRecord: ExportedAssetRecord?
+    let exportedCount: Int
+    let skippedCount: Int
+}
+
+private struct AssetBatchOutcome: Sendable {
+    let exportedCount: Int
+    let skippedCount: Int
+    let exportedRecords: [String: ExportedAssetRecord]
 }
 
 enum ExportEngineError: LocalizedError {
@@ -24,23 +55,34 @@ enum ExportEngineError: LocalizedError {
     }
 }
 
-final class ExportEngine {
+final class ExportEngine: @unchecked Sendable {
     private let photoLibraryService: PhotoLibraryService
     private let manifestStore: ExportManifestStore
     private let fileManager: FileManager
     private let logger = Logger(subsystem: "com.meziantou.icloudphotoexporter", category: "ExportEngine")
+    private let maxConcurrentAssetTasks: Int
 
     init(
         photoLibraryService: PhotoLibraryService,
         manifestStore: ExportManifestStore,
-        fileManager: FileManager = .default
+        fileManager: FileManager = .default,
+        maxConcurrentAssetTasks: Int? = nil
     ) {
         self.photoLibraryService = photoLibraryService
         self.manifestStore = manifestStore
         self.fileManager = fileManager
+        let defaultLimit = max(1, min(ProcessInfo.processInfo.activeProcessorCount, 6))
+        if let maxConcurrentAssetTasks {
+            self.maxConcurrentAssetTasks = max(1, maxConcurrentAssetTasks)
+        } else {
+            self.maxConcurrentAssetTasks = defaultLimit
+        }
     }
 
-    func synchronize(library: LibraryConfiguration) async throws -> LibrarySyncResult {
+    func synchronize(
+        library: LibraryConfiguration,
+        progress: ((ExportProgressUpdate) async -> Void)? = nil
+    ) async throws -> LibrarySyncResult {
         try await photoLibraryService.ensureAuthorized()
         try validateRootFolderExists(library.outputFolderURL)
 
@@ -49,7 +91,7 @@ final class ExportEngine {
             source: library.assetSource,
             selectedSharedAlbumIDs: selectedSharedAlbumIDs
         )
-        var manifest = try await manifestStore.loadManifest()
+        let manifest = try await manifestStore.loadManifest()
         var libraryManifest = manifest.libraryManifest(for: library.id)
 
         let baselineDate = resolveBaselineDate(
@@ -58,87 +100,38 @@ final class ExportEngine {
             libraryManifest: &libraryManifest
         )
 
-        var exportedCount = 0
-        var skippedCount = 0
-
-        for asset in assets {
+        let workItems = assets.compactMap { asset -> AssetExportWorkItem? in
             guard shouldProcess(asset: asset, baselineDate: baselineDate) else {
-                continue
+                return nil
             }
 
-            let effectiveModificationDate = asset.modificationDate ?? asset.creationDate
-            let resources = photoLibraryService.preferredResources(for: asset)
-            guard !resources.isEmpty else {
-                logger.warning("Skipping asset \(asset.localIdentifier, privacy: .public): no exportable resource")
-                skippedCount += 1
-                continue
-            }
-
-            let resourceKeys = resources.map(resourceKey(for:))
-            let existingRecord = libraryManifest.exportedAssets[asset.localIdentifier]
-
-            if shouldSkipExport(
-                existingRecord: existingRecord,
-                effectiveModificationDate: effectiveModificationDate,
-                resourceKeys: resourceKeys
-            ) {
-                skippedCount += 1
-                continue
-            }
-
-            var outputPaths: [String] = []
-            var exportedResourceKeys: [String] = []
-            outputPaths.reserveCapacity(resources.count)
-            exportedResourceKeys.reserveCapacity(resources.count)
-
-            for (index, resource) in resources.enumerated() {
-                let destinationURL = try destinationURL(
-                    for: asset,
-                    resource: resource,
-                    rootDirectory: library.outputFolderURL,
-                    fileNameFormat: library.fileNameFormat,
-                    preferredExistingPath: preferredExistingPath(
-                        for: resourceKeys[index],
-                        existingRecord: existingRecord
-                    )
-                )
-
-                do {
-                    try await writeAssetResource(resource, destinationURL: destinationURL)
-                    updateFileDates(for: asset, destinationURL: destinationURL)
-                    outputPaths.append(destinationURL.path)
-                    exportedResourceKeys.append(resourceKeys[index])
-                } catch {
-                    if canSkipResourceFailure(error, for: resource) {
-                        logger.warning("Skipping optional resource \(resource.originalFilename, privacy: .public) for asset \(asset.localIdentifier, privacy: .public): \(error.localizedDescription, privacy: .public)")
-                        continue
-                    }
-
-                    throw error
-                }
-            }
-
-            guard !outputPaths.isEmpty else {
-                skippedCount += 1
-                continue
-            }
-
-            libraryManifest.exportedAssets[asset.localIdentifier] = ExportedAssetRecord(
-                modificationDate: effectiveModificationDate,
-                resourceKeys: exportedResourceKeys,
-                outputPaths: outputPaths
+            return AssetExportWorkItem(
+                localIdentifier: asset.localIdentifier,
+                existingRecord: libraryManifest.exportedAssets[asset.localIdentifier]
             )
-            exportedCount += 1
         }
 
-        manifest.setLibraryManifest(libraryManifest, for: library.id)
-        try await manifestStore.saveManifest(manifest)
+        let concurrencyLimit = min(maxConcurrentAssetTasks, max(1, workItems.count))
+        let destinationPathCoordinator = DestinationPathCoordinator(fileManager: fileManager)
+        let assetBatchOutcome = try await synchronizeAssets(
+            workItems: workItems,
+            library: library,
+            destinationPathCoordinator: destinationPathCoordinator,
+            concurrencyLimit: concurrencyLimit,
+            progress: progress
+        )
+
+        for (localIdentifier, exportedRecord) in assetBatchOutcome.exportedRecords {
+            libraryManifest.exportedAssets[localIdentifier] = exportedRecord
+        }
+
+        try await manifestStore.saveLibraryManifest(libraryManifest, for: library.id)
 
         return LibrarySyncResult(
             libraryID: library.id,
             libraryName: library.name,
-            exportedCount: exportedCount,
-            skippedCount: skippedCount
+            exportedCount: assetBatchOutcome.exportedCount,
+            skippedCount: assetBatchOutcome.skippedCount
         )
     }
 
@@ -190,6 +183,191 @@ final class ExportEngine {
         }
 
         return assetDate >= baselineDate
+    }
+
+    private func synchronizeAssets(
+        workItems: [AssetExportWorkItem],
+        library: LibraryConfiguration,
+        destinationPathCoordinator: DestinationPathCoordinator,
+        concurrencyLimit: Int,
+        progress: ((ExportProgressUpdate) async -> Void)?
+    ) async throws -> AssetBatchOutcome {
+        guard !workItems.isEmpty else {
+            return AssetBatchOutcome(exportedCount: 0, skippedCount: 0, exportedRecords: [:])
+        }
+
+        var exportedCount = 0
+        var skippedCount = 0
+        var exportedRecords: [String: ExportedAssetRecord] = [:]
+        exportedRecords.reserveCapacity(workItems.count)
+
+        var nextWorkItemIndex = 0
+        let initialTaskCount = min(concurrencyLimit, workItems.count)
+
+        try await withThrowingTaskGroup(of: AssetExportOutcome.self) { group in
+            for _ in 0 ..< initialTaskCount {
+                let workItem = workItems[nextWorkItemIndex]
+                nextWorkItemIndex += 1
+                group.addTask { [self] in
+                    try await exportAsset(
+                        workItem: workItem,
+                        library: library,
+                        destinationPathCoordinator: destinationPathCoordinator,
+                        progress: progress
+                    )
+                }
+            }
+
+            while let outcome = try await group.next() {
+                exportedCount += outcome.exportedCount
+                skippedCount += outcome.skippedCount
+
+                if let exportedRecord = outcome.exportedRecord {
+                    exportedRecords[outcome.localIdentifier] = exportedRecord
+                }
+
+                if nextWorkItemIndex < workItems.count {
+                    let workItem = workItems[nextWorkItemIndex]
+                    nextWorkItemIndex += 1
+                    group.addTask { [self] in
+                        try await exportAsset(
+                            workItem: workItem,
+                            library: library,
+                            destinationPathCoordinator: destinationPathCoordinator,
+                            progress: progress
+                        )
+                    }
+                }
+            }
+        }
+
+        return AssetBatchOutcome(
+            exportedCount: exportedCount,
+            skippedCount: skippedCount,
+            exportedRecords: exportedRecords
+        )
+    }
+
+    private func exportAsset(
+        workItem: AssetExportWorkItem,
+        library: LibraryConfiguration,
+        destinationPathCoordinator: DestinationPathCoordinator,
+        progress: ((ExportProgressUpdate) async -> Void)?
+    ) async throws -> AssetExportOutcome {
+        guard let asset = photoLibraryService.fetchAsset(localIdentifier: workItem.localIdentifier) else {
+            logger.warning("Skipping asset \(workItem.localIdentifier, privacy: .public): asset unavailable")
+            return AssetExportOutcome(
+                localIdentifier: workItem.localIdentifier,
+                exportedRecord: nil,
+                exportedCount: 0,
+                skippedCount: 1
+            )
+        }
+
+        let effectiveModificationDate = asset.modificationDate ?? asset.creationDate
+        let resources = photoLibraryService.preferredResources(for: asset)
+        guard !resources.isEmpty else {
+            logger.warning("Skipping asset \(asset.localIdentifier, privacy: .public): no exportable resource")
+            return AssetExportOutcome(
+                localIdentifier: workItem.localIdentifier,
+                exportedRecord: nil,
+                exportedCount: 0,
+                skippedCount: 1
+            )
+        }
+
+        let resourceKeys = resources.map(resourceKey(for:))
+        if shouldSkipExport(
+            existingRecord: workItem.existingRecord,
+            effectiveModificationDate: effectiveModificationDate,
+            resourceKeys: resourceKeys
+        ) {
+            return AssetExportOutcome(
+                localIdentifier: workItem.localIdentifier,
+                exportedRecord: nil,
+                exportedCount: 0,
+                skippedCount: 1
+            )
+        }
+
+        var outputPaths: [String] = []
+        var exportedResourceKeys: [String] = []
+        outputPaths.reserveCapacity(resources.count)
+        exportedResourceKeys.reserveCapacity(resources.count)
+
+        for (index, resource) in resources.enumerated() {
+            let destinationURL = try await destinationURL(
+                for: asset,
+                resource: resource,
+                rootDirectory: library.outputFolderURL,
+                fileNameFormat: library.fileNameFormat,
+                preferredExistingPath: preferredExistingPath(
+                    for: resourceKeys[index],
+                    existingRecord: workItem.existingRecord
+                ),
+                destinationPathCoordinator: destinationPathCoordinator
+            )
+
+            do {
+                if let progress {
+                    await progress(
+                        ExportProgressUpdate(
+                            libraryID: library.id,
+                            libraryName: library.name,
+                            fileName: destinationURL.lastPathComponent,
+                            destinationPath: destinationURL.path,
+                            state: .copying
+                        )
+                    )
+                }
+
+                try await writeAssetResource(resource, destinationURL: destinationURL)
+                updateFileDates(for: asset, destinationURL: destinationURL)
+                outputPaths.append(destinationURL.path)
+                exportedResourceKeys.append(resourceKeys[index])
+
+                if let progress {
+                    await progress(
+                        ExportProgressUpdate(
+                            libraryID: library.id,
+                            libraryName: library.name,
+                            fileName: destinationURL.lastPathComponent,
+                            destinationPath: destinationURL.path,
+                            state: .copied
+                        )
+                    )
+                }
+            } catch {
+                await destinationPathCoordinator.release(path: destinationURL.path)
+
+                if canSkipResourceFailure(error, for: resource) {
+                    logger.warning("Skipping optional resource \(resource.originalFilename, privacy: .public) for asset \(asset.localIdentifier, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                    continue
+                }
+
+                throw error
+            }
+        }
+
+        guard !outputPaths.isEmpty else {
+            return AssetExportOutcome(
+                localIdentifier: workItem.localIdentifier,
+                exportedRecord: nil,
+                exportedCount: 0,
+                skippedCount: 1
+            )
+        }
+
+        return AssetExportOutcome(
+            localIdentifier: workItem.localIdentifier,
+            exportedRecord: ExportedAssetRecord(
+                modificationDate: effectiveModificationDate,
+                resourceKeys: exportedResourceKeys,
+                outputPaths: outputPaths
+            ),
+            exportedCount: 1,
+            skippedCount: 0
+        )
     }
 
     private func resourceKey(for resource: PHAssetResource) -> String {
@@ -267,8 +445,9 @@ final class ExportEngine {
         resource: PHAssetResource,
         rootDirectory: URL,
         fileNameFormat: String,
-        preferredExistingPath: String?
-    ) throws -> URL {
+        preferredExistingPath: String?,
+        destinationPathCoordinator: DestinationPathCoordinator
+    ) async throws -> URL {
         let directoryURL = exportDirectory(for: asset, rootDirectory: rootDirectory)
         try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
 
@@ -279,37 +458,11 @@ final class ExportEngine {
             originalFilename: originalFilename,
             uti: resource.uniformTypeIdentifier
         )
-        let preferredURL = directoryURL.appendingPathComponent(sanitizedFilename, isDirectory: false)
-
-        if let preferredExistingPath,
-           preferredExistingPath == preferredURL.path
-        {
-            return preferredURL
-        }
-
-        if !fileManager.fileExists(atPath: preferredURL.path) {
-            return preferredURL
-        }
-
-        let filenameBase = (sanitizedFilename as NSString).deletingPathExtension
-        let filenameExtension = (sanitizedFilename as NSString).pathExtension
-        var index = 1
-
-        while true {
-            let candidateName: String
-            if filenameExtension.isEmpty {
-                candidateName = "\(filenameBase)-\(index)"
-            } else {
-                candidateName = "\(filenameBase)-\(index).\(filenameExtension)"
-            }
-
-            let candidateURL = directoryURL.appendingPathComponent(candidateName, isDirectory: false)
-            if !fileManager.fileExists(atPath: candidateURL.path) {
-                return candidateURL
-            }
-
-            index += 1
-        }
+        return await destinationPathCoordinator.reserveAvailableURL(
+            directoryURL: directoryURL,
+            filename: sanitizedFilename,
+            preferredExistingPath: preferredExistingPath
+        )
     }
 
     private func validateRootFolderExists(_ rootDirectory: URL) throws {
@@ -420,5 +573,78 @@ final class ExportEngine {
         } catch {
             logger.warning("Could not set file dates for \(destinationURL.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
         }
+    }
+}
+
+private actor DestinationPathCoordinator {
+    private var reservedPaths: Set<String> = []
+    private let fileManager: FileManager
+
+    init(fileManager: FileManager) {
+        self.fileManager = fileManager
+    }
+
+    func reserveAvailableURL(
+        directoryURL: URL,
+        filename: String,
+        preferredExistingPath: String?
+    ) -> URL {
+        let preferredURL = directoryURL.appendingPathComponent(filename, isDirectory: false)
+
+        if let preferredExistingPath,
+           preferredExistingPath == preferredURL.path
+        {
+            if reservePreferredPath(preferredURL.path) {
+                return preferredURL
+            }
+        } else if reserveIfAvailable(preferredURL.path) {
+            return preferredURL
+        }
+
+        let filenameBase = (filename as NSString).deletingPathExtension
+        let filenameExtension = (filename as NSString).pathExtension
+        var index = 1
+
+        while true {
+            let candidateName: String
+            if filenameExtension.isEmpty {
+                candidateName = "\(filenameBase)-\(index)"
+            } else {
+                candidateName = "\(filenameBase)-\(index).\(filenameExtension)"
+            }
+
+            let candidateURL = directoryURL.appendingPathComponent(candidateName, isDirectory: false)
+            if reserveIfAvailable(candidateURL.path) {
+                return candidateURL
+            }
+
+            index += 1
+        }
+    }
+
+    func release(path: String) {
+        reservedPaths.remove(path)
+    }
+
+    private func reservePreferredPath(_ path: String) -> Bool {
+        guard !reservedPaths.contains(path) else {
+            return false
+        }
+
+        reservedPaths.insert(path)
+        return true
+    }
+
+    private func reserveIfAvailable(_ path: String) -> Bool {
+        guard !reservedPaths.contains(path) else {
+            return false
+        }
+
+        guard !fileManager.fileExists(atPath: path) else {
+            return false
+        }
+
+        reservedPaths.insert(path)
+        return true
     }
 }

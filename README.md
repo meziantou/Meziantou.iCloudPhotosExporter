@@ -17,10 +17,12 @@ Menu bar macOS app (Swift + Xcode) that exports Apple Photos/iCloud assets to lo
 - Live Photo export includes both still image and paired video resources (for example `HEIC + MOV`).
 - Year/Month output folder layout.
 - Incremental sync via persisted manifest.
+- Parallel sync across enabled library profiles and assets (bounded concurrency).
 - Keeps local exports when source assets are deleted.
 - Sync policy supports **Wi-Fi only** mode (default).
 - Default sync interval is **once per day**.
 - On app startup, a sync is triggered automatically when the last scheduled run was missed.
+- Menu bar shows live sync progression, including currently copied file and recent copied files.
 - Menu bar shows an error indicator and recent error log when sync failures occur.
 - Optional start-at-login toggle (`SMAppService`).
 

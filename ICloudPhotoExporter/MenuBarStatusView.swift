@@ -3,6 +3,10 @@ import SwiftUI
 struct MenuBarStatusView: View {
     @ObservedObject var viewModel: AppViewModel
 
+    private var recentCopiedFiles: [String] {
+        Array(viewModel.syncRecentCopiedFiles.prefix(5))
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(viewModel.isSyncing ? "Syncing…" : "Idle")
@@ -10,6 +14,32 @@ struct MenuBarStatusView: View {
             Text(viewModel.lastRunSummary)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+
+            if viewModel.isSyncing {
+                if let currentLibrary = viewModel.syncCurrentLibraryName,
+                   let currentFile = viewModel.syncCurrentFileName
+                {
+                    Text("Copying \(currentLibrary): \(currentFile)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                if !recentCopiedFiles.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Recently copied")
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+
+                        ForEach(Array(recentCopiedFiles.enumerated()), id: \.offset) { _, file in
+                            Text(file)
+                                .font(.caption2)
+                                .lineLimit(1)
+                        }
+                    }
+                }
+            }
 
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)

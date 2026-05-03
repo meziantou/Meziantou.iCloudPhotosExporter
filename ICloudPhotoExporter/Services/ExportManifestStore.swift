@@ -35,6 +35,12 @@ actor ExportManifestStore {
         try data.write(to: manifestURL, options: .atomic)
     }
 
+    func saveLibraryManifest(_ libraryManifest: LibraryExportManifest, for libraryID: UUID) throws {
+        var manifest = try loadManifest()
+        manifest.setLibraryManifest(libraryManifest, for: libraryID)
+        try saveManifest(manifest)
+    }
+
     private func ensureDirectoryExists() throws {
         let directoryURL = manifestURL.deletingLastPathComponent()
         try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
