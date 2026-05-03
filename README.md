@@ -38,9 +38,18 @@ Menu bar macOS app (Swift + Xcode) that exports Apple Photos/iCloud assets to lo
 - Workflow: `.github/workflows/build-release.yml`
 - On `v*` tags (or manual dispatch), it:
   1. Builds the app in Release mode on macOS runner
-  2. Packages binaries as zip files
-  3. Uploads workflow artifacts with **1 day** retention
-  4. Creates/updates a GitHub release and attaches the binaries
+  2. Signs the app bundle (Developer ID if secrets are configured, ad-hoc fallback otherwise)
+  3. Optionally notarizes and staples the app when notarization secrets are configured
+  4. Packages binaries as zip files, including a local helper script (`Open-ICloudPhotoExporter.command`) to clear quarantine and open the app on non-notarized local installs
+  5. Uploads workflow artifacts with **1 day** retention
+  6. Creates/updates a GitHub release and attaches the binaries
+- Optional secrets for fully trusted macOS distribution:
+  - `MACOS_CERT_P12_BASE64`
+  - `MACOS_CERT_P12_PASSWORD`
+  - `MACOS_SIGNING_IDENTITY`
+  - `APPLE_ID`
+  - `APPLE_TEAM_ID`
+  - `APPLE_APP_SPECIFIC_PASSWORD`
 
 ## First run
 
