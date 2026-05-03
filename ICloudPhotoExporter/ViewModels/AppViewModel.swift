@@ -19,12 +19,20 @@ final class AppViewModel: ObservableObject {
     @Published var errorLogEntries: [SyncErrorLogEntry] = []
     @Published var sharedAlbums: [SharedAlbumSummary] = []
     @Published var isLoadingSharedAlbums: Bool = false
+    @Published var isCheckingForUpdates: Bool = false
+    @Published var updateCheckResult: UpdateCheckResult?
+    @Published var updateCheckError: String?
+
+    var currentAppVersion: String {
+        updateCheckService.currentVersion
+    }
 
     private let configurationStore = ConfigurationStore()
     private let loginItemService = LoginItemService()
     private let exportScheduler = ExportScheduler()
     private let sharedAlbumsPhotoLibraryService = PhotoLibraryService()
     private let networkStatusService = NetworkStatusService()
+    private let updateCheckService = UpdateCheckService()
     private let exportEngine = ExportEngine(
         photoLibraryService: PhotoLibraryService(),
         manifestStore: ExportManifestStore()
@@ -179,6 +187,40 @@ final class AppViewModel: ObservableObject {
     func clearErrorLog() {
         errorLogEntries = []
         errorMessage = nil
+    }
+
+    func checkForUpdates() {
+        guard !isCheckingForUpdates else {
+            return
+        }
+
+        isCheckingForUpdates = true
+        updateCheckError = nil
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let result = try await updateCheckService.checkForUpdates()
+                await MainActor.run {
+                    self.updateCheckResult = result
+                    self.isCheckingForUpdates = false
+                    if result.isUpdateAvailable {
+                        NSWorkspace.shared.open(result.releaseURL)
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self.updateCheckError = error.localizedDescription
+                    self.isCheckingForUpdates = false
+                }
+            }
+        }
+    }
+
+    func openLatestRelease() {
+        if let url = updateCheckResult?.releaseURL {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     func refreshSharedAlbums() {

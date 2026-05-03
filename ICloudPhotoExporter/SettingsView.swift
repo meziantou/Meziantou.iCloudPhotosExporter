@@ -93,6 +93,42 @@ struct SettingsView: View {
                     .font(.footnote)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+
+            Divider()
+
+            HStack(spacing: 12) {
+                Text("Version \(viewModel.currentAppVersion)")
+                    .foregroundStyle(.secondary)
+                    .font(.footnote)
+
+                Button(viewModel.isCheckingForUpdates ? "Checking…" : "Check for Updates") {
+                    viewModel.checkForUpdates()
+                }
+                .disabled(viewModel.isCheckingForUpdates)
+                .font(.footnote)
+
+                if let result = viewModel.updateCheckResult {
+                    if result.isUpdateAvailable {
+                        Button("Version \(result.latestVersion) available — Open release page") {
+                            viewModel.openLatestRelease()
+                        }
+                        .foregroundStyle(.blue)
+                        .font(.footnote)
+                    } else {
+                        Text("App is up to date")
+                            .foregroundStyle(.secondary)
+                            .font(.footnote)
+                    }
+                }
+
+                if let updateError = viewModel.updateCheckError {
+                    Text(updateError)
+                        .foregroundStyle(.red)
+                        .font(.footnote)
+                }
+
+                Spacer()
+            }
         }
         .padding(16)
         .frame(minWidth: 840, minHeight: 560)

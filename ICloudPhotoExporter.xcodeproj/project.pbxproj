@@ -21,6 +21,7 @@
 		9CA3D551A897AFB2719081F0 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D2036EC0F311FEFF187D532 /* AppConfiguration.swift */; };
 		C11687FF0F369511017D1E1E /* UniformTypeIdentifiers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 31CB07878343920BCBA8760D /* UniformTypeIdentifiers.framework */; };
 		C3D76C7E28F0F1103A3B3079 /* MenuBarStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 795DC74AA0E59CCA3B521236 /* MenuBarStatusView.swift */; };
+		D2EA96C356EF490883159C56 /* UpdateCheckService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CBE4ADC1B374182AC387023 /* UpdateCheckService.swift */; };
 		E978F367D72C9F8D2E734246 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3FEE825E6AAAC299D52E75A /* AppViewModel.swift */; };
 		EC142CE533C7ECAC80D8BF3F /* ExportManifestStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF880DC3C9AACF9312A7E552 /* ExportManifestStore.swift */; };
 		ED9C500DBE102360514F8EE4 /* AppMenuCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B99D21582F9EA962382295 /* AppMenuCommands.swift */; };
@@ -50,6 +51,7 @@
 		E929E7F70A75DA167970AB56 /* ExportScheduler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExportScheduler.swift; sourceTree = "<group>"; };
 		EE131C2D651BE98E9F3535AD /* LibraryConfiguration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LibraryConfiguration.swift; sourceTree = "<group>"; };
 		FF880DC3C9AACF9312A7E552 /* ExportManifestStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExportManifestStore.swift; sourceTree = "<group>"; };
+		1CBE4ADC1B374182AC387023 /* UpdateCheckService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UpdateCheckService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -130,6 +132,7 @@
 				4A34A2824AC8D3DDBDF57B71 /* ExportEngine.swift */,
 				FF880DC3C9AACF9312A7E552 /* ExportManifestStore.swift */,
 				E929E7F70A75DA167970AB56 /* ExportScheduler.swift */,
+				1CBE4ADC1B374182AC387023 /* UpdateCheckService.swift */,
 			);
 			name = Services;
 			path = Services;
@@ -233,6 +236,7 @@
 				EC142CE533C7ECAC80D8BF3F /* ExportManifestStore.swift in Sources */,
 				92B562D140D4172B4FD314AB /* ExportScheduler.swift in Sources */,
 				E978F367D72C9F8D2E734246 /* AppViewModel.swift in Sources */,
+				D2EA96C356EF490883159C56 /* UpdateCheckService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
