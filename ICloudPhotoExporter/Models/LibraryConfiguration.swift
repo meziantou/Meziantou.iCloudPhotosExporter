@@ -46,7 +46,7 @@ struct LibraryConfiguration: Identifiable, Codable, Equatable {
     var initialSyncDate: Date?
     var isEnabled: Bool
 
-    static let defaultFileNameFormat = "{ID}{ext}"
+    static let defaultFileNameFormat = "{yyyy}{MM}{dd}_{HH}{mm}{ss}_{ID}{ext}"
 
     init(
         id: UUID = UUID(),
