@@ -17,6 +17,33 @@ struct MenuBarStatusView: View {
                     .foregroundStyle(.red)
             }
 
+            if !viewModel.errorLogEntries.isEmpty {
+                Divider()
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Error log")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+
+                    ForEach(Array(viewModel.errorLogEntries.prefix(5))) { entry in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(entry.timestamp.formatted(date: .omitted, time: .shortened))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Text(entry.message)
+                                .font(.caption2)
+                                .foregroundStyle(.red)
+                                .lineLimit(3)
+                        }
+                    }
+
+                    Button("Clear error log") {
+                        viewModel.clearErrorLog()
+                    }
+                    .font(.caption)
+                }
+            }
+
             Divider()
 
             Button("Sync Now") {
@@ -39,6 +66,6 @@ struct MenuBarStatusView: View {
             }
         }
         .padding(12)
-        .frame(width: 280)
+        .frame(width: 320)
     }
 }

@@ -10,6 +10,20 @@ struct LibrarySyncResult {
     let skippedCount: Int
 }
 
+enum ExportEngineError: LocalizedError {
+    case destinationRootMissing(String)
+    case destinationRootNotDirectory(String)
+
+    var errorDescription: String? {
+        switch self {
+        case let .destinationRootMissing(path):
+            return "Export folder does not exist: \(path)"
+        case let .destinationRootNotDirectory(path):
+            return "Export folder is not a directory: \(path)"
+        }
+    }
+}
+
 final class ExportEngine {
     private let photoLibraryService: PhotoLibraryService
     private let manifestStore: ExportManifestStore
@@ -28,7 +42,7 @@ final class ExportEngine {
 
     func synchronize(library: LibraryConfiguration) async throws -> LibrarySyncResult {
         try await photoLibraryService.ensureAuthorized()
-        try fileManager.createDirectory(at: library.outputFolderURL, withIntermediateDirectories: true)
+        try validateRootFolderExists(library.outputFolderURL)
 
         let selectedSharedAlbumIDs = Set(library.selectedSharedAlbumIDs)
         let assets = photoLibraryService.fetchAssetsSortedByCreationDate(
@@ -288,6 +302,19 @@ final class ExportEngine {
             }
 
             index += 1
+        }
+    }
+
+    private func validateRootFolderExists(_ rootDirectory: URL) throws {
+        var isDirectory: ObjCBool = false
+        let exists = fileManager.fileExists(atPath: rootDirectory.path, isDirectory: &isDirectory)
+
+        guard exists else {
+            throw ExportEngineError.destinationRootMissing(rootDirectory.path)
+        }
+
+        guard isDirectory.boolValue else {
+            throw ExportEngineError.destinationRootNotDirectory(rootDirectory.path)
         }
     }
 

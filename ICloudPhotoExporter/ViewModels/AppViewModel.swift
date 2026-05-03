@@ -3,6 +3,12 @@ import Foundation
 import Network
 import OSLog
 
+struct SyncErrorLogEntry: Identifiable {
+    let id = UUID()
+    let timestamp: Date
+    let message: String
+}
+
 @MainActor
 final class AppViewModel: ObservableObject {
     @Published var configuration: AppConfiguration = .default
@@ -10,6 +16,7 @@ final class AppViewModel: ObservableObject {
     @Published var isSchedulerPaused: Bool = false
     @Published var lastRunSummary: String = "Idle"
     @Published var errorMessage: String?
+    @Published var errorLogEntries: [SyncErrorLogEntry] = []
     @Published var sharedAlbums: [SharedAlbumSummary] = []
     @Published var isLoadingSharedAlbums: Bool = false
 
@@ -26,6 +33,22 @@ final class AppViewModel: ObservableObject {
 
     private var didLoadConfiguration = false
     private var lastAppliedStartAtLogin: Bool?
+
+    var hasErrorIndicator: Bool {
+        errorMessage != nil || !errorLogEntries.isEmpty
+    }
+
+    var menuBarSymbolName: String {
+        if isSyncing {
+            return "arrow.triangle.2.circlepath.circle.fill"
+        }
+
+        if hasErrorIndicator {
+            return "exclamationmark.triangle.fill"
+        }
+
+        return "photo.on.rectangle.angled"
+    }
 
     init() {
         Task { [weak self] in
@@ -51,6 +74,7 @@ final class AppViewModel: ObservableObject {
             runMissedScheduledSyncOnStartupIfNeeded()
         } catch {
             errorMessage = error.localizedDescription
+            appendErrorLog("Configuration load failed: \(error.localizedDescription)")
             logger.error("Failed loading configuration: \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -69,6 +93,7 @@ final class AppViewModel: ObservableObject {
         } catch {
             Task { @MainActor in
                 self.errorMessage = error.localizedDescription
+                self.appendErrorLog("Start at login update failed: \(error.localizedDescription)")
             }
         }
 
@@ -147,6 +172,11 @@ final class AppViewModel: ObservableObject {
         NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 
+    func clearErrorLog() {
+        errorLogEntries = []
+        errorMessage = nil
+    }
+
     func refreshSharedAlbums() {
         guard !isLoadingSharedAlbums else {
             return
@@ -166,6 +196,7 @@ final class AppViewModel: ObservableObject {
                 await MainActor.run {
                     self.sharedAlbums = []
                     self.errorMessage = error.localizedDescription
+                    self.appendErrorLog("Loading shared albums failed: \(error.localizedDescription)")
                     self.isLoadingSharedAlbums = false
                 }
             }
@@ -201,7 +232,7 @@ final class AppViewModel: ObservableObject {
 
         var totalExported = 0
         var totalSkipped = 0
-        var failedLibraries: [String] = []
+        var failedLibraryErrors: [String] = []
 
         for library in enabledLibraries {
             do {
@@ -209,7 +240,9 @@ final class AppViewModel: ObservableObject {
                 totalExported += result.exportedCount
                 totalSkipped += result.skippedCount
             } catch {
-                failedLibraries.append(library.name)
+                let detail = "Sync failed for \(library.name): \(error.localizedDescription)"
+                failedLibraryErrors.append(detail)
+                appendErrorLog(detail)
                 logger.error("Sync failed for \(library.name, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
         }
@@ -218,13 +251,13 @@ final class AppViewModel: ObservableObject {
         configuration.lastSyncAttemptAt = .now
         persistConfiguration(configuration)
 
-        if failedLibraries.isEmpty {
+        if failedLibraryErrors.isEmpty {
             lastRunSummary = "Exported \(totalExported), skipped \(totalSkipped)."
             return
         }
 
-        errorMessage = "Failed libraries: \(failedLibraries.joined(separator: ", "))"
-        lastRunSummary = "Exported \(totalExported), skipped \(totalSkipped), failures \(failedLibraries.count)."
+        errorMessage = failedLibraryErrors.first
+        lastRunSummary = "Exported \(totalExported), skipped \(totalSkipped), failures \(failedLibraryErrors.count)."
     }
 
     private func applyLoginItemSetting(force: Bool) throws {
@@ -260,8 +293,16 @@ final class AppViewModel: ObservableObject {
             } catch {
                 await MainActor.run {
                     self.errorMessage = error.localizedDescription
+                    self.appendErrorLog("Saving configuration failed: \(error.localizedDescription)")
                 }
             }
+        }
+    }
+
+    private func appendErrorLog(_ message: String) {
+        errorLogEntries.insert(SyncErrorLogEntry(timestamp: .now, message: message), at: 0)
+        if errorLogEntries.count > 100 {
+            errorLogEntries.removeLast(errorLogEntries.count - 100)
         }
     }
 }
