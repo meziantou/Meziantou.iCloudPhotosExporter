@@ -1,0 +1,77 @@
+name: Build and release macOS app
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (for example v1.0.0)"
+        required: true
+        type: string
+      prerelease:
+        description: "Publish as prerelease"
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  build-release:
+    runs-on: macos-14
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+      RELEASE_PRERELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease || false }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build release app
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project ICloudPhotoExporter.xcodeproj \
+            -scheme ICloudPhotoExporter \
+            -configuration Release \
+            -destination 'platform=macOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+
+      - name: Package binaries
+        run: |
+          set -euo pipefail
+          APP_PATH="$(find build/Build/Products/Release -maxdepth 1 -name '*.app' -print -quit)"
+          if [ -z "$APP_PATH" ]; then
+            echo "No .app bundle found in build output"
+            exit 1
+          fi
+
+          APP_NAME="$(basename "$APP_PATH" .app)"
+          mkdir -p dist
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "dist/${APP_NAME}-${RELEASE_TAG}.zip"
+
+          if [ -d "${APP_PATH}.dSYM" ]; then
+            ditto -c -k --sequesterRsrc --keepParent "${APP_PATH}.dSYM" "dist/${APP_NAME}-${RELEASE_TAG}.dSYM.zip"
+          fi
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ICloudPhotoExporter-${{ env.RELEASE_TAG }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ env.RELEASE_TAG }}
+          generate_release_notes: true
+          prerelease: ${{ env.RELEASE_PRERELEASE }}
+          files: dist/*

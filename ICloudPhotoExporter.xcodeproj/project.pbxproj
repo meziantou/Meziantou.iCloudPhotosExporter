@@ -1,0 +1,419 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		184FC007464A16288279E805 /* PhotoLibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E01F3A63F384B43F19D9239C /* PhotoLibraryService.swift */; };
+		342DB2CD2A7F19890730E236 /* OSLog.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2D192CCFE6F18FAA4C5E902 /* OSLog.framework */; };
+		3A3DF61E31487876EE90AC0B /* LoginItemService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C3B372D07709A391241276 /* LoginItemService.swift */; };
+		4B5D17FB65865BBB0C282263 /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2FF5AEA241C481C77D600FC /* ServiceManagement.framework */; };
+		702F7DF2F13805C247AD7A0F /* ConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 024E35BD16F3790361B5DDFB /* ConfigurationStore.swift */; };
+		7AA0B35A2064D3DF9784AB38 /* Photos.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 033EEB3D2F4239032401F27B /* Photos.framework */; };
+		7E254409961E91512AAEF941 /* ExportManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3369BA90DD05D448C49C5CAF /* ExportManifest.swift */; };
+		7F4BB28ECA9239FD76D922CD /* LibraryConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE131C2D651BE98E9F3535AD /* LibraryConfiguration.swift */; };
+		903CDD2660C46F8737D0ED04 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9D947831517A07CA18BC7FD1 /* Cocoa.framework */; };
+		92B562D140D4172B4FD314AB /* ExportScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E929E7F70A75DA167970AB56 /* ExportScheduler.swift */; };
+		944631E7EB4A3FC4B4D475A5 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 632AD8EA4B71A343297D14C9 /* SettingsView.swift */; };
+		9CA3D551A897AFB2719081F0 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D2036EC0F311FEFF187D532 /* AppConfiguration.swift */; };
+		C11687FF0F369511017D1E1E /* UniformTypeIdentifiers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 31CB07878343920BCBA8760D /* UniformTypeIdentifiers.framework */; };
+		C3D76C7E28F0F1103A3B3079 /* MenuBarStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 795DC74AA0E59CCA3B521236 /* MenuBarStatusView.swift */; };
+		E978F367D72C9F8D2E734246 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3FEE825E6AAAC299D52E75A /* AppViewModel.swift */; };
+		EC142CE533C7ECAC80D8BF3F /* ExportManifestStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF880DC3C9AACF9312A7E552 /* ExportManifestStore.swift */; };
+		ED9C500DBE102360514F8EE4 /* AppMenuCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74B99D21582F9EA962382295 /* AppMenuCommands.swift */; };
+		F53B9B7A84664F6D201F0E59 /* ExportEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A34A2824AC8D3DDBDF57B71 /* ExportEngine.swift */; };
+		F6142664075194F7AFBDD8C6 /* ICloudPhotoExporterApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD3119F323F7EED6DEA38AD /* ICloudPhotoExporterApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		024E35BD16F3790361B5DDFB /* ConfigurationStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConfigurationStore.swift; sourceTree = "<group>"; };
+		033EEB3D2F4239032401F27B /* Photos.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Photos.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Photos.framework; sourceTree = DEVELOPER_DIR; };
+		31CB07878343920BCBA8760D /* UniformTypeIdentifiers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UniformTypeIdentifiers.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/UniformTypeIdentifiers.framework; sourceTree = DEVELOPER_DIR; };
+		3369BA90DD05D448C49C5CAF /* ExportManifest.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExportManifest.swift; sourceTree = "<group>"; };
+		4A34A2824AC8D3DDBDF57B71 /* ExportEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExportEngine.swift; sourceTree = "<group>"; };
+		632AD8EA4B71A343297D14C9 /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		74B99D21582F9EA962382295 /* AppMenuCommands.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppMenuCommands.swift; sourceTree = "<group>"; };
+		774B331C4824395DA5090298 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		795DC74AA0E59CCA3B521236 /* MenuBarStatusView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenuBarStatusView.swift; sourceTree = "<group>"; };
+		7D2036EC0F311FEFF187D532 /* AppConfiguration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
+		9D947831517A07CA18BC7FD1 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		B2FF5AEA241C481C77D600FC /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/ServiceManagement.framework; sourceTree = DEVELOPER_DIR; };
+		C1C3B372D07709A391241276 /* LoginItemService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoginItemService.swift; sourceTree = "<group>"; };
+		C3FEE825E6AAAC299D52E75A /* AppViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
+		CCD3119F323F7EED6DEA38AD /* ICloudPhotoExporterApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ICloudPhotoExporterApp.swift; sourceTree = "<group>"; };
+		D2D192CCFE6F18FAA4C5E902 /* OSLog.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OSLog.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/OSLog.framework; sourceTree = DEVELOPER_DIR; };
+		DB424D8723D4E65483427D26 /* ICloudPhotoExporter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ICloudPhotoExporter.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E01F3A63F384B43F19D9239C /* PhotoLibraryService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhotoLibraryService.swift; sourceTree = "<group>"; };
+		E929E7F70A75DA167970AB56 /* ExportScheduler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExportScheduler.swift; sourceTree = "<group>"; };
+		EE131C2D651BE98E9F3535AD /* LibraryConfiguration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LibraryConfiguration.swift; sourceTree = "<group>"; };
+		FF880DC3C9AACF9312A7E552 /* ExportManifestStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExportManifestStore.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BB4E187FA7EBD3F310A744D6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				903CDD2660C46F8737D0ED04 /* Cocoa.framework in Frameworks */,
+				7AA0B35A2064D3DF9784AB38 /* Photos.framework in Frameworks */,
+				4B5D17FB65865BBB0C282263 /* ServiceManagement.framework in Frameworks */,
+				C11687FF0F369511017D1E1E /* UniformTypeIdentifiers.framework in Frameworks */,
+				342DB2CD2A7F19890730E236 /* OSLog.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		19283ECF520EB1E4C76ABCCE /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				9D947831517A07CA18BC7FD1 /* Cocoa.framework */,
+				033EEB3D2F4239032401F27B /* Photos.framework */,
+				B2FF5AEA241C481C77D600FC /* ServiceManagement.framework */,
+				31CB07878343920BCBA8760D /* UniformTypeIdentifiers.framework */,
+				D2D192CCFE6F18FAA4C5E902 /* OSLog.framework */,
+			);
+			name = "OS X";
+			sourceTree = "<group>";
+		};
+		24FBA77BEEA16E3F43708E05 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				C3FEE825E6AAAC299D52E75A /* AppViewModel.swift */,
+			);
+			name = ViewModels;
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		3E46BB710136F51D5F67830D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				19283ECF520EB1E4C76ABCCE /* OS X */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		8EB49C2B4E2BC3D3C07A3E0A /* ICloudPhotoExporter */ = {
+			isa = PBXGroup;
+			children = (
+				E2DB96B40DAE2E0FD2324497 /* Models */,
+				A3439A212030E2ED63BC7776 /* Services */,
+				24FBA77BEEA16E3F43708E05 /* ViewModels */,
+				CCD3119F323F7EED6DEA38AD /* ICloudPhotoExporterApp.swift */,
+				74B99D21582F9EA962382295 /* AppMenuCommands.swift */,
+				795DC74AA0E59CCA3B521236 /* MenuBarStatusView.swift */,
+				632AD8EA4B71A343297D14C9 /* SettingsView.swift */,
+				774B331C4824395DA5090298 /* Info.plist */,
+			);
+			name = ICloudPhotoExporter;
+			path = ICloudPhotoExporter;
+			sourceTree = "<group>";
+		};
+		91E2757F948933818F312F61 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				DB424D8723D4E65483427D26 /* ICloudPhotoExporter.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A3439A212030E2ED63BC7776 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				024E35BD16F3790361B5DDFB /* ConfigurationStore.swift */,
+				C1C3B372D07709A391241276 /* LoginItemService.swift */,
+				E01F3A63F384B43F19D9239C /* PhotoLibraryService.swift */,
+				4A34A2824AC8D3DDBDF57B71 /* ExportEngine.swift */,
+				FF880DC3C9AACF9312A7E552 /* ExportManifestStore.swift */,
+				E929E7F70A75DA167970AB56 /* ExportScheduler.swift */,
+			);
+			name = Services;
+			path = Services;
+			sourceTree = "<group>";
+		};
+		D7BA3A8E7AD139DAC00DB5AF = {
+			isa = PBXGroup;
+			children = (
+				91E2757F948933818F312F61 /* Products */,
+				3E46BB710136F51D5F67830D /* Frameworks */,
+				8EB49C2B4E2BC3D3C07A3E0A /* ICloudPhotoExporter */,
+			);
+			sourceTree = "<group>";
+		};
+		E2DB96B40DAE2E0FD2324497 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				7D2036EC0F311FEFF187D532 /* AppConfiguration.swift */,
+				EE131C2D651BE98E9F3535AD /* LibraryConfiguration.swift */,
+				3369BA90DD05D448C49C5CAF /* ExportManifest.swift */,
+			);
+			name = Models;
+			path = Models;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E45663F717F706EA7CE463BC /* ICloudPhotoExporter */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3813698F6CAFA5D7B5A5A4BE /* Build configuration list for PBXNativeTarget "ICloudPhotoExporter" */;
+			buildPhases = (
+				42729365FC1C1B4F223722BB /* Sources */,
+				BB4E187FA7EBD3F310A744D6 /* Frameworks */,
+				49FDCAE5E6DF3EAC406FB712 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ICloudPhotoExporter;
+			productName = ICloudPhotoExporter;
+			productReference = DB424D8723D4E65483427D26 /* ICloudPhotoExporter.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DA96EF0F65640E3E6F4815BB /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+			};
+			buildConfigurationList = FC61C118483CA504F3DF2950 /* Build configuration list for PBXProject "ICloudPhotoExporter" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D7BA3A8E7AD139DAC00DB5AF;
+			minimizedProjectReferenceProxies = 0;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 91E2757F948933818F312F61 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E45663F717F706EA7CE463BC /* ICloudPhotoExporter */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		49FDCAE5E6DF3EAC406FB712 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		42729365FC1C1B4F223722BB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F6142664075194F7AFBDD8C6 /* ICloudPhotoExporterApp.swift in Sources */,
+				ED9C500DBE102360514F8EE4 /* AppMenuCommands.swift in Sources */,
+				C3D76C7E28F0F1103A3B3079 /* MenuBarStatusView.swift in Sources */,
+				944631E7EB4A3FC4B4D475A5 /* SettingsView.swift in Sources */,
+				9CA3D551A897AFB2719081F0 /* AppConfiguration.swift in Sources */,
+				7F4BB28ECA9239FD76D922CD /* LibraryConfiguration.swift in Sources */,
+				7E254409961E91512AAEF941 /* ExportManifest.swift in Sources */,
+				702F7DF2F13805C247AD7A0F /* ConfigurationStore.swift in Sources */,
+				3A3DF61E31487876EE90AC0B /* LoginItemService.swift in Sources */,
+				184FC007464A16288279E805 /* PhotoLibraryService.swift in Sources */,
+				F53B9B7A84664F6D201F0E59 /* ExportEngine.swift in Sources */,
+				EC142CE533C7ECAC80D8BF3F /* ExportManifestStore.swift in Sources */,
+				92B562D140D4172B4FD314AB /* ExportScheduler.swift in Sources */,
+				E978F367D72C9F8D2E734246 /* AppViewModel.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		5EAE5626FD6486C09D5BFB5A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ICloudPhotoExporter/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.meziantou.icloudphotoexporter;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		8263832FC97504C571AB2547 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		88B8411A8189DCA908AD7EAB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		BB3B9D41EF1501FCB64D8DF7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ICloudPhotoExporter/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.meziantou.icloudphotoexporter;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3813698F6CAFA5D7B5A5A4BE /* Build configuration list for PBXNativeTarget "ICloudPhotoExporter" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5EAE5626FD6486C09D5BFB5A /* Release */,
+				BB3B9D41EF1501FCB64D8DF7 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FC61C118483CA504F3DF2950 /* Build configuration list for PBXProject "ICloudPhotoExporter" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8263832FC97504C571AB2547 /* Debug */,
+				88B8411A8189DCA908AD7EAB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = DA96EF0F65640E3E6F4815BB /* Project object */;
+}
