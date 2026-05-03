@@ -1,6 +1,6 @@
 import Foundation
 
-enum LibraryAssetSource: String, Codable, CaseIterable, Identifiable {
+enum LibraryAssetSource: String, Codable, CaseIterable, Identifiable, Sendable {
     case mainLibrary
     case sharedAlbums
 
@@ -16,7 +16,7 @@ enum LibraryAssetSource: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-enum InitialSyncMode: String, Codable, CaseIterable, Identifiable {
+enum InitialSyncMode: String, Codable, CaseIterable, Identifiable, Sendable {
     case fullHistory
     case fromDate
     case newOnly
@@ -35,7 +35,7 @@ enum InitialSyncMode: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-struct LibraryConfiguration: Identifiable, Codable, Equatable {
+struct LibraryConfiguration: Identifiable, Codable, Equatable, Sendable {
     let id: UUID
     var name: String
     var assetSource: LibraryAssetSource

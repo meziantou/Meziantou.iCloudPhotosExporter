@@ -9,7 +9,7 @@ struct SyncErrorLogEntry: Identifiable {
     let message: String
 }
 
-private struct LibrarySyncOutcome {
+private struct LibrarySyncOutcome: Sendable {
     let result: LibrarySyncResult?
     let errorDetail: String?
 }

@@ -1,6 +1,6 @@
 import Foundation
 
-struct ExportManifest: Codable {
+struct ExportManifest: Codable, Sendable {
     var libraries: [String: LibraryExportManifest]
 
     static let empty = ExportManifest(libraries: [:])
@@ -14,7 +14,7 @@ struct ExportManifest: Codable {
     }
 }
 
-struct LibraryExportManifest: Codable {
+struct LibraryExportManifest: Codable, Sendable {
     var source: LibraryAssetSource?
     var selectedSharedAlbumIDs: [String]?
     var baselineDate: Date?
@@ -28,7 +28,7 @@ struct LibraryExportManifest: Codable {
     )
 }
 
-struct ExportedAssetRecord: Codable {
+struct ExportedAssetRecord: Codable, Sendable {
     var modificationDate: Date?
     var resourceKeys: [String]
     var outputPaths: [String]

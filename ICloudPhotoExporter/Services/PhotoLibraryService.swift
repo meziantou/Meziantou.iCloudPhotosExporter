@@ -123,6 +123,11 @@ final class PhotoLibraryService {
         }
     }
 
+    func fetchAsset(localIdentifier: String) -> PHAsset? {
+        let result = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)
+        return result.firstObject
+    }
+
     func preferredResources(for asset: PHAsset) -> [PHAssetResource] {
         let resources = PHAssetResource.assetResources(for: asset)
         var selected: [PHAssetResource] = []
