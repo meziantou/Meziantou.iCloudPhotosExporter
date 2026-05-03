@@ -12,12 +12,31 @@ actor ExportManifestStore {
         let rootDirectory = appSupportDirectory.appendingPathComponent("ICloudPhotoExporter", isDirectory: true)
         self.manifestURL = rootDirectory.appendingPathComponent("manifest.json", isDirectory: false)
 
+        let preciseDateFormatter = ISO8601DateFormatter()
+        preciseDateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let legacyDateFormatter = ISO8601DateFormatter()
+        legacyDateFormatter.formatOptions = [.withInternetDateTime]
+
         self.encoder = JSONEncoder()
         self.encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        self.encoder.dateEncodingStrategy = .iso8601
+        self.encoder.dateEncodingStrategy = .custom { date, encoder in
+            var container = encoder.singleValueContainer()
+            try container.encode(preciseDateFormatter.string(from: date))
+        }
 
         self.decoder = JSONDecoder()
-        self.decoder.dateDecodingStrategy = .iso8601
+        self.decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let value = try container.decode(String.self)
+            if let date = preciseDateFormatter.date(from: value) ?? legacyDateFormatter.date(from: value) {
+                return date
+            }
+
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Invalid ISO-8601 date: \(value)"
+            )
+        }
     }
 
     func loadManifest() throws -> ExportManifest {

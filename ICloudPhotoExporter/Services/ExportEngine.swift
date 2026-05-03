@@ -38,7 +38,6 @@ private struct AssetExportOutcome: Sendable {
 private struct AssetBatchOutcome: Sendable {
     let exportedCount: Int
     let skippedCount: Int
-    let exportedRecords: [String: ExportedAssetRecord]
 }
 
 enum ExportEngineError: LocalizedError {
@@ -99,6 +98,7 @@ final class ExportEngine: @unchecked Sendable {
             library: library,
             libraryManifest: &libraryManifest
         )
+        try await manifestStore.saveLibraryManifest(libraryManifest, for: library.id)
 
         let workItems = assets.compactMap { asset -> AssetExportWorkItem? in
             guard shouldProcess(asset: asset, baselineDate: baselineDate) else {
@@ -118,14 +118,12 @@ final class ExportEngine: @unchecked Sendable {
             library: library,
             destinationPathCoordinator: destinationPathCoordinator,
             concurrencyLimit: concurrencyLimit,
-            progress: progress
+            progress: progress,
+            recordExport: { localIdentifier, exportedRecord in
+                libraryManifest.exportedAssets[localIdentifier] = exportedRecord
+                try await self.manifestStore.saveLibraryManifest(libraryManifest, for: library.id)
+            }
         )
-
-        for (localIdentifier, exportedRecord) in assetBatchOutcome.exportedRecords {
-            libraryManifest.exportedAssets[localIdentifier] = exportedRecord
-        }
-
-        try await manifestStore.saveLibraryManifest(libraryManifest, for: library.id)
 
         return LibrarySyncResult(
             libraryID: library.id,
@@ -190,16 +188,15 @@ final class ExportEngine: @unchecked Sendable {
         library: LibraryConfiguration,
         destinationPathCoordinator: DestinationPathCoordinator,
         concurrencyLimit: Int,
-        progress: ((ExportProgressUpdate) async -> Void)?
+        progress: ((ExportProgressUpdate) async -> Void)?,
+        recordExport: (_ localIdentifier: String, _ exportedRecord: ExportedAssetRecord) async throws -> Void
     ) async throws -> AssetBatchOutcome {
         guard !workItems.isEmpty else {
-            return AssetBatchOutcome(exportedCount: 0, skippedCount: 0, exportedRecords: [:])
+            return AssetBatchOutcome(exportedCount: 0, skippedCount: 0)
         }
 
         var exportedCount = 0
         var skippedCount = 0
-        var exportedRecords: [String: ExportedAssetRecord] = [:]
-        exportedRecords.reserveCapacity(workItems.count)
 
         var nextWorkItemIndex = 0
         let initialTaskCount = min(concurrencyLimit, workItems.count)
@@ -223,7 +220,7 @@ final class ExportEngine: @unchecked Sendable {
                 skippedCount += outcome.skippedCount
 
                 if let exportedRecord = outcome.exportedRecord {
-                    exportedRecords[outcome.localIdentifier] = exportedRecord
+                    try await recordExport(outcome.localIdentifier, exportedRecord)
                 }
 
                 if nextWorkItemIndex < workItems.count {
@@ -243,8 +240,7 @@ final class ExportEngine: @unchecked Sendable {
 
         return AssetBatchOutcome(
             exportedCount: exportedCount,
-            skippedCount: skippedCount,
-            exportedRecords: exportedRecords
+            skippedCount: skippedCount
         )
     }
 
@@ -383,7 +379,7 @@ final class ExportEngine: @unchecked Sendable {
             return false
         }
 
-        guard existingRecord.modificationDate == effectiveModificationDate else {
+        guard areModificationDatesEquivalent(existingRecord.modificationDate, effectiveModificationDate) else {
             return false
         }
 
@@ -397,6 +393,18 @@ final class ExportEngine: @unchecked Sendable {
 
         return existingRecord.outputPaths.allSatisfy { outputPath in
             fileManager.fileExists(atPath: outputPath)
+        }
+    }
+
+    private func areModificationDatesEquivalent(_ lhs: Date?, _ rhs: Date?) -> Bool {
+        switch (lhs, rhs) {
+        case (nil, nil):
+            return true
+        case let (lhsDate?, rhsDate?):
+            // Older manifests persisted dates with second precision.
+            return abs(lhsDate.timeIntervalSince(rhsDate)) < 1
+        default:
+            return false
         }
     }
 
@@ -541,16 +549,31 @@ final class ExportEngine: @unchecked Sendable {
     }
 
     private func writeAssetResource(_ resource: PHAssetResource, destinationURL: URL) async throws {
-        let temporaryFilename = UUID().uuidString
-        let temporaryURL = fileManager.temporaryDirectory.appendingPathComponent(temporaryFilename, isDirectory: false)
+        let destinationDirectoryURL = destinationURL.deletingLastPathComponent()
+        let temporaryFilename = ".\(destinationURL.lastPathComponent).icloudphotoexporter.tmp.\(UUID().uuidString)"
+        let temporaryURL = destinationDirectoryURL.appendingPathComponent(temporaryFilename, isDirectory: false)
 
-        try await photoLibraryService.writeResourceData(resource, to: temporaryURL)
+        do {
+            try await photoLibraryService.writeResourceData(resource, to: temporaryURL)
 
-        if fileManager.fileExists(atPath: destinationURL.path) {
-            try fileManager.removeItem(at: destinationURL)
+            if fileManager.fileExists(atPath: destinationURL.path) {
+                _ = try fileManager.replaceItemAt(destinationURL, withItemAt: temporaryURL, backupItemName: nil, options: [])
+            } else {
+                try fileManager.moveItem(at: temporaryURL, to: destinationURL)
+            }
+        } catch {
+            let writeError = error
+
+            if fileManager.fileExists(atPath: temporaryURL.path) {
+                do {
+                    try fileManager.removeItem(at: temporaryURL)
+                } catch {
+                    logger.warning("Could not remove temporary export file \(temporaryURL.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                }
+            }
+
+            throw writeError
         }
-
-        try fileManager.moveItem(at: temporaryURL, to: destinationURL)
     }
 
     private func updateFileDates(for asset: PHAsset, destinationURL: URL) {
@@ -597,7 +620,7 @@ private actor DestinationPathCoordinator {
             if reservePreferredPath(preferredURL.path) {
                 return preferredURL
             }
-        } else if reserveIfAvailable(preferredURL.path) {
+        } else if reservePreferredPath(preferredURL.path) {
             return preferredURL
         }
 
