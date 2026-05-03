@@ -15,6 +15,11 @@ struct AppMenuCommands: Commands {
             }
             .keyboardShortcut(",", modifiers: .command)
 
+            Button(viewModel.isCheckingForUpdates ? "Checking for Updates…" : "Check for Updates") {
+                viewModel.checkForUpdates()
+            }
+            .disabled(viewModel.isCheckingForUpdates)
+
             Divider()
 
             Button(viewModel.isSchedulerPaused ? "Resume Scheduler" : "Pause Scheduler") {

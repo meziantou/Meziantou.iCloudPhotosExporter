@@ -65,6 +65,18 @@ struct MenuBarStatusView: View {
                 }
             }
 
+            Button(viewModel.isCheckingForUpdates ? "Checking for Updates…" : "Check for Updates") {
+                viewModel.checkForUpdates()
+            }
+            .disabled(viewModel.isCheckingForUpdates)
+
+            if let result = viewModel.updateCheckResult, result.isUpdateAvailable {
+                Button("Update available: v\(result.latestVersion)") {
+                    viewModel.openLatestRelease()
+                }
+                .foregroundStyle(.blue)
+            }
+
             Divider()
 
             Button("Quit iCloud Exporter") {

@@ -26,7 +26,7 @@ jobs:
       RELEASE_PRERELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease || false }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build release app
         run: |
@@ -136,7 +136,7 @@ jobs:
           fi
 
       - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ICloudPhotoExporter-${{ env.RELEASE_TAG }}
           path: dist/*
@@ -144,11 +144,23 @@ jobs:
           retention-days: 1
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           target_commitish: ${{ github.sha }}
           name: ${{ env.RELEASE_TAG }}
+          body: |
+            ## Installation
+
+            1. Download and unzip `ICloudPhotoExporter-${{ env.RELEASE_TAG }}.zip`.
+            2. Move `ICloudPhotoExporter.app` to your **Applications** folder.
+            3. Remove the quarantine flag, then open the app:
+               ```sh
+               xattr -dr com.apple.quarantine /Applications/ICloudPhotoExporter.app
+               open /Applications/ICloudPhotoExporter.app
+               ```
+               Alternatively, double-click the included **`Open-ICloudPhotoExporter.command`** script — it removes the quarantine flag and launches the app automatically.
+
           generate_release_notes: true
           prerelease: ${{ env.RELEASE_PRERELEASE }}
           files: dist/*
