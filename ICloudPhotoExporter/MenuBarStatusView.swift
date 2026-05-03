@@ -64,6 +64,12 @@ struct MenuBarStatusView: View {
                     viewModel.openSettings()
                 }
             }
+
+            Divider()
+
+            Button("Quit iCloud Exporter") {
+                viewModel.quitApplication()
+            }
         }
         .padding(12)
         .frame(width: 320)

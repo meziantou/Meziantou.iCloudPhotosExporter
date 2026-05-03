@@ -172,6 +172,10 @@ final class AppViewModel: ObservableObject {
         NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 
+    func quitApplication() {
+        NSApp.terminate(nil)
+    }
+
     func clearErrorLog() {
         errorLogEntries = []
         errorMessage = nil
