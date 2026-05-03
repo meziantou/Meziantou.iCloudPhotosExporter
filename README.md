@@ -32,6 +32,9 @@ Menu bar macOS app (Swift + Xcode) that exports Apple Photos/iCloud assets to lo
 
 ## CI / Release
 
+- PR validation workflow: `.github/workflows/ci-build.yml`
+  - Runs on pull requests to `main`
+  - Builds the app in Debug mode on macOS runner to validate compile/build health
 - Workflow: `.github/workflows/build-release.yml`
 - On `v*` tags (or manual dispatch), it:
   1. Builds the app in Release mode on macOS runner
