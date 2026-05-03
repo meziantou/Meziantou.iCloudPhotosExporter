@@ -96,6 +96,7 @@ final class ExportEngine {
                     for: asset,
                     resource: resource,
                     rootDirectory: library.outputFolderURL,
+                    fileNameFormat: library.fileNameFormat,
                     preferredExistingPath: preferredExistingPath(
                         for: resourceKeys[index],
                         existingRecord: existingRecord
@@ -265,13 +266,19 @@ final class ExportEngine {
         for asset: PHAsset,
         resource: PHAssetResource,
         rootDirectory: URL,
+        fileNameFormat: String,
         preferredExistingPath: String?
     ) throws -> URL {
         let directoryURL = exportDirectory(for: asset, rootDirectory: rootDirectory)
         try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
 
         let originalFilename = resource.originalFilename
-        let sanitizedFilename = sanitizeFilename(originalFilename, uti: resource.uniformTypeIdentifier)
+        let sanitizedFilename = applyFileNameFormat(
+            fileNameFormat,
+            asset: asset,
+            originalFilename: originalFilename,
+            uti: resource.uniformTypeIdentifier
+        )
         let preferredURL = directoryURL.appendingPathComponent(sanitizedFilename, isDirectory: false)
 
         if let preferredExistingPath,
@@ -333,9 +340,14 @@ final class ExportEngine {
             .appendingPathComponent(String(format: "%02d", month), isDirectory: true)
     }
 
-    private func sanitizeFilename(_ originalFilename: String, uti: String?) -> String {
+    private func applyFileNameFormat(
+        _ format: String,
+        asset: PHAsset,
+        originalFilename: String,
+        uti: String?
+    ) -> String {
         let nsFilename = originalFilename as NSString
-        var name = nsFilename.deletingPathExtension
+        let nameBase = nsFilename.deletingPathExtension
         var ext = nsFilename.pathExtension
 
         if ext.isEmpty,
@@ -346,25 +358,33 @@ final class ExportEngine {
             ext = resolvedExtension
         }
 
+        let extWithDot = ext.isEmpty ? "" : ".\(ext)"
+
+        let date = asset.creationDate ?? asset.modificationDate ?? Date()
+        let calendar = Calendar.current
+        let components = calendar.dateComponents(
+            [.year, .month, .day, .hour, .minute, .second],
+            from: date
+        )
+
+        var result = format
+        result = result.replacingOccurrences(of: "{yyyy}", with: String(format: "%04d", components.year ?? 0))
+        result = result.replacingOccurrences(of: "{MM}",   with: String(format: "%02d", components.month ?? 0))
+        result = result.replacingOccurrences(of: "{dd}",   with: String(format: "%02d", components.day ?? 0))
+        result = result.replacingOccurrences(of: "{HH}",   with: String(format: "%02d", components.hour ?? 0))
+        result = result.replacingOccurrences(of: "{mm}",   with: String(format: "%02d", components.minute ?? 0))
+        result = result.replacingOccurrences(of: "{ss}",   with: String(format: "%02d", components.second ?? 0))
+        result = result.replacingOccurrences(of: "{ID}",   with: nameBase)
+        result = result.replacingOccurrences(of: "{ext}",  with: extWithDot)
+
         let invalidCharacters = CharacterSet(charactersIn: "/:\\?%*|\"<>")
-        let cleanedScalars = name.unicodeScalars.map { scalar -> UnicodeScalar in
-            if invalidCharacters.contains(scalar) {
-                return "-"
-            }
-            return scalar
+        let cleanedScalars = result.unicodeScalars.map { scalar -> UnicodeScalar in
+            invalidCharacters.contains(scalar) ? UnicodeScalar(45)! : scalar  // 45 = '-'
         }
-        name = String(String.UnicodeScalarView(cleanedScalars))
+        result = String(String.UnicodeScalarView(cleanedScalars))
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
-        if name.isEmpty {
-            name = "asset"
-        }
-
-        if ext.isEmpty {
-            return name
-        }
-
-        return "\(name).\(ext)"
+        return result.isEmpty ? "asset" : result
     }
 
     private func writeAssetResource(_ resource: PHAssetResource, destinationURL: URL) async throws {

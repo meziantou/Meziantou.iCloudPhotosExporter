@@ -194,6 +194,17 @@ private struct LibraryEditorView: View {
                 }
             }
 
+            VStack(alignment: .leading, spacing: 4) {
+                TextField("File name format", text: $library.fileNameFormat)
+                    .textFieldStyle(.roundedBorder)
+                Text("Placeholders: {yyyy} {MM} {dd} {HH} {mm} {ss} {ID} {ext}")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("Example: {yyyy}{MM}{dd}_{HH}{mm}{ss}_{ID}{ext}")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Picker("Photo source", selection: $library.assetSource) {
                 ForEach(LibraryAssetSource.allCases) { source in
                     Text(source.displayName).tag(source)

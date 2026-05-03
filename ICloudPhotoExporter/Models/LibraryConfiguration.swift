@@ -41,9 +41,12 @@ struct LibraryConfiguration: Identifiable, Codable, Equatable {
     var assetSource: LibraryAssetSource
     var selectedSharedAlbumIDs: [String]
     var outputFolderPath: String
+    var fileNameFormat: String
     var initialSyncMode: InitialSyncMode
     var initialSyncDate: Date?
     var isEnabled: Bool
+
+    static let defaultFileNameFormat = "{yyyy}{MM}{dd}_{HH}{mm}{ss}_{ID}{ext}"
 
     init(
         id: UUID = UUID(),
@@ -51,6 +54,7 @@ struct LibraryConfiguration: Identifiable, Codable, Equatable {
         assetSource: LibraryAssetSource = .mainLibrary,
         selectedSharedAlbumIDs: [String] = [],
         outputFolderPath: String,
+        fileNameFormat: String = defaultFileNameFormat,
         initialSyncMode: InitialSyncMode = .newOnly,
         initialSyncDate: Date? = nil,
         isEnabled: Bool = true
@@ -60,6 +64,7 @@ struct LibraryConfiguration: Identifiable, Codable, Equatable {
         self.assetSource = assetSource
         self.selectedSharedAlbumIDs = selectedSharedAlbumIDs
         self.outputFolderPath = outputFolderPath
+        self.fileNameFormat = fileNameFormat
         self.initialSyncMode = initialSyncMode
         self.initialSyncDate = initialSyncDate
         self.isEnabled = isEnabled
@@ -85,6 +90,7 @@ struct LibraryConfiguration: Identifiable, Codable, Equatable {
         case assetSource
         case selectedSharedAlbumIDs
         case outputFolderPath
+        case fileNameFormat
         case initialSyncMode
         case initialSyncDate
         case isEnabled
@@ -97,6 +103,7 @@ struct LibraryConfiguration: Identifiable, Codable, Equatable {
         assetSource = try container.decodeIfPresent(LibraryAssetSource.self, forKey: .assetSource) ?? .mainLibrary
         selectedSharedAlbumIDs = try container.decodeIfPresent([String].self, forKey: .selectedSharedAlbumIDs) ?? []
         outputFolderPath = try container.decode(String.self, forKey: .outputFolderPath)
+        fileNameFormat = try container.decodeIfPresent(String.self, forKey: .fileNameFormat) ?? LibraryConfiguration.defaultFileNameFormat
         initialSyncMode = try container.decodeIfPresent(InitialSyncMode.self, forKey: .initialSyncMode) ?? .newOnly
         initialSyncDate = try container.decodeIfPresent(Date.self, forKey: .initialSyncDate)
         isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
