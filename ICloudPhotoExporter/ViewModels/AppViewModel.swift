@@ -531,7 +531,7 @@ final class AppViewModel: ObservableObject {
         do {
             try await Self.executePhotosPermissionReset(bundleIdentifier: bundleIdentifier)
             errorMessage = nil
-            lastRunSummary = "Photos permission reset. Retry sync if the prompt does not appear."
+            lastRunSummary = "Photos permission reset. Retry sync; reopen the app if the prompt still does not appear."
             refreshSharedAlbums()
         } catch {
             errorMessage = error.localizedDescription

@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Photos
 
@@ -25,6 +26,7 @@ enum PhotoLibraryError: LocalizedError {
             \(PhotoLibraryService.photosPermissionResetCommand())
 
             Then retry sync or refresh shared albums to show the permission prompt again.
+            If the prompt still does not appear, reopen the app and try once more.
             """
         case .restricted:
             return "Photo library access is restricted on this Mac."
@@ -54,21 +56,11 @@ final class PhotoLibraryService {
         case .authorized, .limited:
             return
         case .notDetermined:
-            let requested = await requestAuthorization()
-            switch requested {
-            case .authorized, .limited:
-                return
-            case .denied:
-                throw PhotoLibraryError.denied
-            case .restricted:
-                throw PhotoLibraryError.restricted
-            case .notDetermined:
-                throw PhotoLibraryError.unauthorized
-            @unknown default:
-                throw PhotoLibraryError.unauthorized
-            }
+            try evaluateAuthorizationStatus(await requestAuthorization())
         case .denied:
-            throw PhotoLibraryError.denied
+            // After `tccutil reset`, PhotoKit may still report `.denied` in-process until
+            // authorization is requested again.
+            try evaluateAuthorizationStatus(await requestAuthorization())
         case .restricted:
             throw PhotoLibraryError.restricted
         @unknown default:
@@ -199,9 +191,27 @@ final class PhotoLibraryService {
 
     private func requestAuthorization() async -> PHAuthorizationStatus {
         await withCheckedContinuation { continuation in
-            PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
-                continuation.resume(returning: status)
+            Task { @MainActor in
+                NSApp.activate(ignoringOtherApps: true)
+                PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
+                    continuation.resume(returning: status)
+                }
             }
+        }
+    }
+
+    private func evaluateAuthorizationStatus(_ status: PHAuthorizationStatus) throws {
+        switch status {
+        case .authorized, .limited:
+            return
+        case .denied:
+            throw PhotoLibraryError.denied
+        case .restricted:
+            throw PhotoLibraryError.restricted
+        case .notDetermined:
+            throw PhotoLibraryError.unauthorized
+        @unknown default:
+            throw PhotoLibraryError.unauthorized
         }
     }
 
