@@ -92,8 +92,14 @@ struct MenuBarStatusView: View {
                 viewModel.setSchedulerPaused(!viewModel.isSchedulerPaused)
             }
 
-            Button("Settings…") {
-                viewModel.openSettings()
+            if #available(macOS 14.0, *) {
+                SettingsLink {
+                    Text("Settings…")
+                }
+            } else {
+                Button("Settings…") {
+                    viewModel.openSettings()
+                }
             }
 
             Button("About iCloud Exporter") {

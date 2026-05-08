@@ -16,10 +16,15 @@ struct AppMenuCommands: Commands {
             }
             .keyboardShortcut("r")
 
-            Button("Open Settings") {
-                viewModel.openSettings()
+            if #available(macOS 14.0, *) {
+                SettingsLink("Open Settings")
+                    .keyboardShortcut(",", modifiers: .command)
+            } else {
+                Button("Open Settings") {
+                    viewModel.openSettings()
+                }
+                .keyboardShortcut(",", modifiers: .command)
             }
-            .keyboardShortcut(",", modifiers: .command)
 
             Button(viewModel.isCheckingForUpdates ? "Checking for Updates…" : "Check for Updates") {
                 viewModel.checkForUpdates()

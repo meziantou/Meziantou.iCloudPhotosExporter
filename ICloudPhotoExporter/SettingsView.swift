@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct SettingsView: View {
@@ -148,6 +149,7 @@ struct SettingsView: View {
         .padding(16)
         .frame(minWidth: 840, minHeight: 560)
         .onAppear {
+            NSApp.activate(ignoringOtherApps: true)
             if selectedLibraryID == nil {
                 selectedLibraryID = viewModel.configuration.libraries.first?.id
             }
