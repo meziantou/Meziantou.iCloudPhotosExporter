@@ -68,6 +68,8 @@ Menu bar macOS app (Swift + Xcode) that exports Apple Photos/iCloud assets to lo
 ## Notes
 
 - PhotoKit access requires Photos permission at runtime.
+- If Photos permission appears stuck after re-signing or changing signing identity, reset the app's Photos TCC entry and retry:
+  `tccutil reset Photos com.meziantou.icloudphotoexporter`
 - PhotoKit exports from the current **System Photo Library**. `Shared albums` mode exports assets from iCloud Shared Albums in that system library, either from all shared albums or only selected albums.
 - Configured export root folders must already exist; the app does not create missing roots. Date-based subfolders under an existing root are created automatically.
 - Export writes are finalized atomically at the destination path (temporary file in destination folder + atomic replace/move), and manifest state is persisted after each successful asset export to reduce crash recovery gaps.
