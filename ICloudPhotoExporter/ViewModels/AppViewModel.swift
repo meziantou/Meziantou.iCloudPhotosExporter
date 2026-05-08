@@ -243,6 +243,7 @@ final class AppViewModel: ObservableObject {
     }
 
     func openSettings() {
+        NSApp.activate(ignoringOtherApps: true)
         NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 
