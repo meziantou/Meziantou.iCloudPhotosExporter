@@ -146,7 +146,9 @@ struct SettingsView: View {
                 Spacer()
             }
         }
-        .padding(16)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 16)
+        .padding(.top, 22)
         .frame(minWidth: 840, minHeight: 560)
         .onAppear {
             NSApp.activate(ignoringOtherApps: true)
