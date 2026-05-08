@@ -17,7 +17,9 @@ struct AppMenuCommands: Commands {
             .keyboardShortcut("r")
 
             if #available(macOS 14.0, *) {
-                SettingsLink("Open Settings")
+                SettingsLink {
+                    Text("Open Settings")
+                }
                     .keyboardShortcut(",", modifiers: .command)
             } else {
                 Button("Open Settings") {
