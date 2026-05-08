@@ -94,6 +94,21 @@ struct SettingsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
+            if viewModel.canResetPhotosPermission {
+                VStack(alignment: .leading, spacing: 4) {
+                    Button(viewModel.isResettingPhotosPermission ? "Resetting Photos Permission…" : "Reset Photos Permission") {
+                        viewModel.resetPhotosPermission()
+                    }
+                    .disabled(viewModel.isResettingPhotosPermission)
+
+                    Text("Runs: \(viewModel.photosPermissionResetCommand)")
+                        .foregroundStyle(.secondary)
+                        .font(.caption2)
+                        .textSelection(.enabled)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             Divider()
 
             HStack(spacing: 12) {

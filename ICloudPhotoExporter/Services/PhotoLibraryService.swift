@@ -18,7 +18,14 @@ enum PhotoLibraryError: LocalizedError {
         case .unauthorized:
             return "Photo library access is not granted."
         case .denied:
-            return "Photo library access was denied. Enable access in System Settings."
+            return """
+            Photo library access was denied.
+
+            If this started after signing changes, reset Photos permission in Terminal:
+            \(PhotoLibraryService.photosPermissionResetCommand())
+
+            Then retry sync or refresh shared albums to show the permission prompt again.
+            """
         case .restricted:
             return "Photo library access is restricted on this Mac."
         case .unableToCreateTemporaryFile:
@@ -28,6 +35,19 @@ enum PhotoLibraryError: LocalizedError {
 }
 
 final class PhotoLibraryService {
+    static func photosPermissionBundleIdentifier() -> String {
+        let bundleID = Bundle.main.bundleIdentifier?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let bundleID, !bundleID.isEmpty {
+            return bundleID
+        }
+
+        return "com.meziantou.icloudphotoexporter"
+    }
+
+    static func photosPermissionResetCommand() -> String {
+        "tccutil reset Photos \(photosPermissionBundleIdentifier())"
+    }
+
     func ensureAuthorized() async throws {
         let currentStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
         switch currentStatus {

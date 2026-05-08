@@ -10,6 +10,20 @@ struct SyncErrorLogEntry: Identifiable {
     let message: String
 }
 
+private enum PhotosPermissionResetError: LocalizedError {
+    case commandUnavailable
+    case commandFailed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .commandUnavailable:
+            return "Could not run tccutil to reset Photos permission."
+        case let .commandFailed(detail):
+            return "Failed to reset Photos permission: \(detail)"
+        }
+    }
+}
+
 private struct LibrarySyncOutcome: Sendable {
     let result: LibrarySyncResult?
     let errorDetail: String?
@@ -38,6 +52,7 @@ final class AppViewModel: ObservableObject {
     @Published var syncCurrentFileName: String?
     @Published var syncCurrentLibraryName: String?
     @Published var syncRecentCopiedFiles: [String] = []
+    @Published var isResettingPhotosPermission: Bool = false
 
     var currentAppVersion: String {
         updateCheckService.currentVersionString
@@ -53,6 +68,14 @@ final class AppViewModel: ObservableObject {
         }
 
         return "iCloud Exporter"
+    }
+
+    var canResetPhotosPermission: Bool {
+        PHPhotoLibrary.authorizationStatus(for: .readWrite) == .denied
+    }
+
+    var photosPermissionResetCommand: String {
+        PhotoLibraryService.photosPermissionResetCommand()
     }
 
     private let configurationStore = ConfigurationStore()
@@ -275,6 +298,16 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    func resetPhotosPermission() {
+        guard !isResettingPhotosPermission else {
+            return
+        }
+
+        Task { [weak self] in
+            await self?.resetPhotosPermissionCore()
+        }
+    }
+
     private func configureScheduler() {
         exportScheduler.configure(intervalMinutes: configuration.syncIntervalMinutes) { [weak self] in
             self?.runSyncNow()
@@ -482,6 +515,57 @@ final class AppViewModel: ObservableObject {
         if errorLogEntries.count > 100 {
             errorLogEntries.removeLast(errorLogEntries.count - 100)
         }
+    }
+
+    private func resetPhotosPermissionCore() async {
+        isResettingPhotosPermission = true
+        defer { isResettingPhotosPermission = false }
+
+        let bundleIdentifier = PhotoLibraryService.photosPermissionBundleIdentifier()
+
+        do {
+            try await Self.executePhotosPermissionReset(bundleIdentifier: bundleIdentifier)
+            errorMessage = nil
+            lastRunSummary = "Photos permission reset. Retry sync if the prompt does not appear."
+            refreshSharedAlbums()
+        } catch {
+            errorMessage = error.localizedDescription
+            appendErrorLog("Resetting Photos permission failed: \(error.localizedDescription)")
+        }
+    }
+
+    nonisolated private static func executePhotosPermissionReset(bundleIdentifier: String) async throws {
+        try await Task.detached(priority: .userInitiated) {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
+            process.arguments = ["reset", "Photos", bundleIdentifier]
+
+            let errorPipe = Pipe()
+            process.standardOutput = Pipe()
+            process.standardError = errorPipe
+
+            do {
+                try process.run()
+            } catch {
+                throw PhotosPermissionResetError.commandUnavailable
+            }
+
+            process.waitUntilExit()
+
+            guard process.terminationStatus == 0 else {
+                let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+                let errorOutput = String(data: errorData, encoding: .utf8)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                let detail: String
+                if let errorOutput, !errorOutput.isEmpty {
+                    detail = errorOutput
+                } else {
+                    detail = "tccutil exited with status \(process.terminationStatus)."
+                }
+
+                throw PhotosPermissionResetError.commandFailed(detail)
+            }
+        }.value
     }
 
     private func recordSyncProgress(_ update: ExportProgressUpdate) {

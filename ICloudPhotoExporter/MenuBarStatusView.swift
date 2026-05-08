@@ -47,6 +47,13 @@ struct MenuBarStatusView: View {
                     .foregroundStyle(.red)
             }
 
+            if viewModel.canResetPhotosPermission {
+                Button(viewModel.isResettingPhotosPermission ? "Resetting Photos Permission…" : "Reset Photos Permission") {
+                    viewModel.resetPhotosPermission()
+                }
+                .disabled(viewModel.isResettingPhotosPermission)
+            }
+
             if !viewModel.errorLogEntries.isEmpty {
                 Divider()
 
