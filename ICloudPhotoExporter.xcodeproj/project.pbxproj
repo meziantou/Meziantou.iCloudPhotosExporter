@@ -48,7 +48,7 @@
 		C3FEE825E6AAAC299D52E75A /* AppViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
 		CCD3119F323F7EED6DEA38AD /* ICloudPhotoExporterApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ICloudPhotoExporterApp.swift; sourceTree = "<group>"; };
 		D2D192CCFE6F18FAA4C5E902 /* OSLog.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OSLog.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/OSLog.framework; sourceTree = DEVELOPER_DIR; };
-		DB424D8723D4E65483427D26 /* ICloudPhotoExporter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ICloudPhotoExporter.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DB424D8723D4E65483427D26 /* ICloudPhotosExporter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ICloudPhotosExporter.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E01F3A63F384B43F19D9239C /* PhotoLibraryService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhotoLibraryService.swift; sourceTree = "<group>"; };
 		E929E7F70A75DA167970AB56 /* ExportScheduler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExportScheduler.swift; sourceTree = "<group>"; };
 		EE131C2D651BE98E9F3535AD /* LibraryConfiguration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LibraryConfiguration.swift; sourceTree = "<group>"; };
@@ -121,7 +121,7 @@
 		91E2757F948933818F312F61 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				DB424D8723D4E65483427D26 /* ICloudPhotoExporter.app */,
+				DB424D8723D4E65483427D26 /* ICloudPhotosExporter.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -177,8 +177,8 @@
 			dependencies = (
 			);
 			name = ICloudPhotoExporter;
-			productName = ICloudPhotoExporter;
-			productReference = DB424D8723D4E65483427D26 /* ICloudPhotoExporter.app */;
+			productName = ICloudPhotosExporter;
+			productReference = DB424D8723D4E65483427D26 /* ICloudPhotosExporter.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -260,7 +260,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0.10;
-				PRODUCT_BUNDLE_IDENTIFIER = com.meziantou.icloudphotoexporter;
+				PRODUCT_BUNDLE_IDENTIFIER = com.meziantou.icloudphotosexporter;
+				PRODUCT_NAME = ICloudPhotosExporter;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
 			};
@@ -394,7 +395,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0.10;
-				PRODUCT_BUNDLE_IDENTIFIER = com.meziantou.icloudphotoexporter;
+				PRODUCT_BUNDLE_IDENTIFIER = com.meziantou.icloudphotosexporter;
+				PRODUCT_NAME = ICloudPhotosExporter;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
 			};

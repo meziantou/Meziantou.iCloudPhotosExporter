@@ -146,7 +146,7 @@ jobs:
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v7
         with:
-          name: ICloudPhotoExporter-${{ env.RELEASE_TAG }}
+          name: ${{ env.APP_NAME }}-${{ env.RELEASE_TAG }}
           path: dist/*
           if-no-files-found: error
           retention-days: 1
@@ -160,14 +160,14 @@ jobs:
           body: |
             ## Installation
 
-            1. Download and unzip `ICloudPhotoExporter-${{ env.RELEASE_TAG }}.zip`.
-            2. Move `ICloudPhotoExporter.app` to your **Applications** folder.
+            1. Download and unzip `${{ env.APP_NAME }}-${{ env.RELEASE_TAG }}.zip`.
+            2. Move `${{ env.APP_NAME }}.app` to your **Applications** folder.
             3. Remove the quarantine flag, then open the app:
                ```sh
-               xattr -dr com.apple.quarantine /Applications/ICloudPhotoExporter.app
-               open /Applications/ICloudPhotoExporter.app
+               xattr -dr com.apple.quarantine /Applications/${{ env.APP_NAME }}.app
+               open /Applications/${{ env.APP_NAME }}.app
                ```
-               Alternatively, double-click the included **`Open-ICloudPhotoExporter.command`** script — it removes the quarantine flag and launches the app automatically.
+               Alternatively, double-click the included **`Open-${{ env.APP_NAME }}.command`** script — it removes the quarantine flag and launches the app automatically.
 
           generate_release_notes: true
           prerelease: ${{ env.RELEASE_PRERELEASE }}

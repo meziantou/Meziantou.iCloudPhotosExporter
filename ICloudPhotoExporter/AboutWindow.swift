@@ -36,7 +36,7 @@ final class AboutWindowController {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    private static let repositoryURL = URL(string: "https://github.com/meziantou/Meziantou.iCloudPhotoExporter")!
+    private static let repositoryURL = URL(string: "https://github.com/meziantou/Meziantou.iCloudPhotosExporter")!
     private static let authorName = "Gérald Barré"
 }
 

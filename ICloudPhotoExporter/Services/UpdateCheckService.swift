@@ -59,10 +59,10 @@ final class UpdateCheckService {
             throw UpdateCheckError.invalidCurrentVersion(currentVersionString)
         }
 
-        let url = URL(string: "https://api.github.com/repos/meziantou/Meziantou.iCloudPhotoExporter/releases/latest")!
+        let url = URL(string: "https://api.github.com/repos/meziantou/Meziantou.iCloudPhotosExporter/releases/latest")!
         var request = URLRequest(url: url)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("ICloudPhotoExporter/\(currentVersion)", forHTTPHeaderField: "User-Agent")
+        request.setValue("ICloudPhotosExporter/\(currentVersion)", forHTTPHeaderField: "User-Agent")
 
         let (data, response) = try await URLSession.shared.data(for: request)
 

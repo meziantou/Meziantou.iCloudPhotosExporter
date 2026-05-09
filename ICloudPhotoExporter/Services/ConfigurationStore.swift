@@ -9,7 +9,7 @@ actor ConfigurationStore {
     init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
         let appSupportDirectory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let rootDirectory = appSupportDirectory.appendingPathComponent("ICloudPhotoExporter", isDirectory: true)
+        let rootDirectory = appSupportDirectory.appendingPathComponent("ICloudPhotosExporter", isDirectory: true)
         self.configurationURL = rootDirectory.appendingPathComponent("configuration.json", isDirectory: false)
 
         self.encoder = JSONEncoder()
