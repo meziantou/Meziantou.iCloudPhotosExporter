@@ -51,21 +51,36 @@ final class PhotoLibraryService {
     }
 
     func ensureAuthorized() async throws {
-        let currentStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-        switch currentStatus {
-        case .authorized, .limited:
-            return
-        case .notDetermined:
-            try evaluateAuthorizationStatus(await requestAuthorization())
-        case .denied:
-            // After `tccutil reset`, PhotoKit may still report `.denied` in-process until
-            // authorization is requested again.
-            try evaluateAuthorizationStatus(await requestAuthorization())
-        case .restricted:
-            throw PhotoLibraryError.restricted
-        @unknown default:
-            throw PhotoLibraryError.unauthorized
+        var status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+
+        for _ in 0 ..< 3 {
+            switch status {
+            case .authorized, .limited:
+                return
+            case .notDetermined:
+                status = await requestAuthorization()
+            case .denied:
+                // After `tccutil reset`, PhotoKit can transiently report `.denied`.
+                // Request once, then re-read status and retry if it flipped back to
+                // `.notDetermined` so the system prompt can still appear.
+                let requestedStatus = await requestAuthorization()
+                if requestedStatus == .denied {
+                    let refreshedStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+                    if refreshedStatus == .notDetermined {
+                        status = refreshedStatus
+                        continue
+                    }
+                }
+
+                status = requestedStatus
+            case .restricted:
+                throw PhotoLibraryError.restricted
+            @unknown default:
+                throw PhotoLibraryError.unauthorized
+            }
         }
+
+        try evaluateAuthorizationStatus(status)
     }
 
     func fetchAssetsSortedByCreationDate(source: LibraryAssetSource, selectedSharedAlbumIDs: Set<String>) -> [PHAsset] {
