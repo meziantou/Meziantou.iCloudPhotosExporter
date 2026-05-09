@@ -414,6 +414,15 @@ final class AppViewModel: ObservableObject {
             return
         }
 
+        do {
+            try await sharedAlbumsPhotoLibraryService.ensureAuthorized()
+        } catch {
+            errorMessage = error.localizedDescription
+            appendErrorLog("Sync failed before export: \(error.localizedDescription)")
+            lastRunSummary = "Sync failed: photo permission is required."
+            return
+        }
+
         isSyncing = true
         errorMessage = nil
         syncCopiedFileCount = 0
