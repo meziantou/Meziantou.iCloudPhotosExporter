@@ -70,6 +70,11 @@ final class AppViewModel: ObservableObject {
         return "iCloud Exporter"
     }
 
+    private var hasPhotoLibraryAccess: Bool {
+        let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        return status == .authorized || status == .limited
+    }
+
     var canResetPhotosPermission: Bool {
         PHPhotoLibrary.authorizationStatus(for: .readWrite) == .denied
     }
@@ -140,8 +145,7 @@ final class AppViewModel: ObservableObject {
             // system dialog would appear unexpectedly before the user does anything.
             // The Settings view's onAppear and the sync engine each request authorization
             // at the right moment.
-            let authStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-            if authStatus == .authorized || authStatus == .limited {
+            if hasPhotoLibraryAccess {
                 refreshSharedAlbums()
             }
             runMissedScheduledSyncOnStartupIfNeeded()
@@ -488,6 +492,14 @@ final class AppViewModel: ObservableObject {
 
     private func runMissedScheduledSyncOnStartupIfNeeded() {
         guard !isSchedulerPaused else {
+            return
+        }
+
+        // Do not trigger startup sync until permission is already granted.
+        // After a TCC reset, the first authorization request should come from a
+        // user-initiated action (Sync now / Refresh shared albums), otherwise
+        // the prompt may not appear and access can immediately fall back to denied.
+        guard hasPhotoLibraryAccess else {
             return
         }
 

@@ -21,7 +21,7 @@ Menu bar macOS app (Swift + Xcode) that exports Apple Photos/iCloud assets to lo
 - Keeps local exports when source assets are deleted.
 - Sync policy supports **Wi-Fi only** mode (default).
 - Default sync interval is **once per day**.
-- On app startup, a sync is triggered automatically when the last scheduled run was missed.
+- On app startup, a sync is triggered automatically when the last scheduled run was missed and Photos access is already granted.
 - Menu bar shows live sync progression, including currently copied file and recent copied files.
 - Menu bar shows an error indicator and recent error log when sync failures occur.
 - Optional start-at-login toggle (`SMAppService`).
@@ -71,6 +71,7 @@ Menu bar macOS app (Swift + Xcode) that exports Apple Photos/iCloud assets to lo
 - If Photos permission appears stuck after re-signing or changing signing identity, reset the app's Photos TCC entry and retry:
   `tccutil reset Photos com.meziantou.icloudphotoexporter`
 - If the prompt still does not reappear immediately after reset, quit and reopen the app once, then retry sync.
+- Startup sync waits until Photos access is granted, so the first prompt after a reset appears only when you explicitly sync or refresh shared albums.
 - PhotoKit exports from the current **System Photo Library**. `Shared albums` mode exports assets from iCloud Shared Albums in that system library, either from all shared albums or only selected albums.
 - Configured export root folders must already exist; the app does not create missing roots. Date-based subfolders under an existing root are created automatically.
 - Export writes are finalized atomically at the destination path (temporary file in destination folder + atomic replace/move), and manifest state is persisted after each successful asset export to reduce crash recovery gaps.
