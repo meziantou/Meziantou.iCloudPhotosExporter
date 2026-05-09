@@ -16,139 +16,142 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
-            Form {
-                Section("General") {
-                    Toggle("Start at login", isOn: $viewModel.configuration.startAtLogin)
-                    Toggle("Sync on Wi-Fi only", isOn: $viewModel.configuration.syncOnWiFiOnly)
-                    Stepper(value: $viewModel.configuration.syncIntervalMinutes, in: 60 ... 10080, step: 60) {
-                        Text("Sync every \(syncIntervalDescription(minutes: viewModel.configuration.syncIntervalMinutes))")
-                    }
-                }
-            }
-
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Libraries")
-                            .font(.headline)
-                        Spacer()
-                        Button("Add") {
-                            selectedLibraryID = viewModel.addLibrary()
-                        }
-                        Button("Remove") {
-                            selectedLibraryID = viewModel.removeLibrary(withID: selectedLibraryID)
-                        }
-                        .disabled(selectedLibraryID == nil)
-                    }
-
-                    List(selection: $selectedLibraryID) {
-                        ForEach(viewModel.configuration.libraries) { library in
-                            Text(library.name).tag(Optional(library.id))
+        GeometryReader { proxy in
+            VStack(spacing: 16) {
+                Form {
+                    Section("General") {
+                        Toggle("Start at login", isOn: $viewModel.configuration.startAtLogin)
+                        Toggle("Sync on Wi-Fi only", isOn: $viewModel.configuration.syncOnWiFiOnly)
+                        Stepper(value: $viewModel.configuration.syncIntervalMinutes, in: 60 ... 10080, step: 60) {
+                            Text("Sync every \(syncIntervalDescription(minutes: viewModel.configuration.syncIntervalMinutes))")
                         }
                     }
-                    .frame(minWidth: 220, minHeight: 260)
                 }
 
-                if let selectedLibraryBinding {
-                    LibraryEditorView(
-                        library: selectedLibraryBinding,
-                        sharedAlbums: viewModel.sharedAlbums,
-                        isLoadingSharedAlbums: viewModel.isLoadingSharedAlbums,
-                        refreshSharedAlbums: {
-                            viewModel.refreshSharedAlbums()
-                        },
-                        chooseOutputFolder: {
-                            viewModel.chooseOutputFolder(for: selectedLibraryBinding.wrappedValue.id)
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Libraries")
+                                .font(.headline)
+                            Spacer()
+                            Button("Add") {
+                                selectedLibraryID = viewModel.addLibrary()
+                            }
+                            Button("Remove") {
+                                selectedLibraryID = viewModel.removeLibrary(withID: selectedLibraryID)
+                            }
+                            .disabled(selectedLibraryID == nil)
                         }
-                    )
-                } else {
-                    VStack(alignment: .leading) {
-                        Text("Select a library to edit settings.")
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                }
-            }
 
-            HStack {
-                Button("Sync now") {
-                    viewModel.runSyncNow()
-                }
-                .disabled(viewModel.isSyncing)
-
-                Button(viewModel.isSchedulerPaused ? "Resume scheduler" : "Pause scheduler") {
-                    viewModel.setSchedulerPaused(!viewModel.isSchedulerPaused)
-                }
-
-                Spacer()
-                Text(viewModel.lastRunSummary)
-                    .foregroundStyle(.secondary)
-                    .font(.footnote)
-            }
-
-            if let errorMessage = viewModel.errorMessage {
-                Text(errorMessage)
-                    .foregroundStyle(.red)
-                    .font(.footnote)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            if viewModel.canResetPhotosPermission {
-                VStack(alignment: .leading, spacing: 4) {
-                    Button(viewModel.isResettingPhotosPermission ? "Resetting Photos Permission…" : "Reset Photos Permission") {
-                        viewModel.resetPhotosPermission()
-                    }
-                    .disabled(viewModel.isResettingPhotosPermission)
-
-                    Text("Runs: \(viewModel.photosPermissionResetCommand)")
-                        .foregroundStyle(.secondary)
-                        .font(.caption2)
-                        .textSelection(.enabled)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            Divider()
-
-            HStack(spacing: 12) {
-                Text("Version \(viewModel.currentAppVersion)")
-                    .foregroundStyle(.secondary)
-                    .font(.footnote)
-
-                Button(viewModel.isCheckingForUpdates ? "Checking…" : "Check for Updates") {
-                    viewModel.checkForUpdates()
-                }
-                .disabled(viewModel.isCheckingForUpdates)
-                .font(.footnote)
-
-                if let result = viewModel.updateCheckResult {
-                    if result.isUpdateAvailable {
-                        Button("Version \(result.latestVersion) available — Open release page") {
-                            viewModel.openLatestRelease()
+                        List(selection: $selectedLibraryID) {
+                            ForEach(viewModel.configuration.libraries) { library in
+                                Text(library.name).tag(Optional(library.id))
+                            }
                         }
-                        .foregroundStyle(.blue)
-                        .font(.footnote)
+                        .frame(minWidth: 220, minHeight: 260)
+                    }
+
+                    if let selectedLibraryBinding {
+                        LibraryEditorView(
+                            library: selectedLibraryBinding,
+                            sharedAlbums: viewModel.sharedAlbums,
+                            isLoadingSharedAlbums: viewModel.isLoadingSharedAlbums,
+                            refreshSharedAlbums: {
+                                viewModel.refreshSharedAlbums()
+                            },
+                            chooseOutputFolder: {
+                                viewModel.chooseOutputFolder(for: selectedLibraryBinding.wrappedValue.id)
+                            }
+                        )
                     } else {
-                        Text("App is up to date")
-                            .foregroundStyle(.secondary)
-                            .font(.footnote)
+                        VStack(alignment: .leading) {
+                            Text("Select a library to edit settings.")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     }
                 }
 
-                if let updateError = viewModel.updateCheckError {
-                    Text(updateError)
+                HStack {
+                    Button("Sync now") {
+                        viewModel.runSyncNow()
+                    }
+                    .disabled(viewModel.isSyncing)
+
+                    Button(viewModel.isSchedulerPaused ? "Resume scheduler" : "Pause scheduler") {
+                        viewModel.setSchedulerPaused(!viewModel.isSchedulerPaused)
+                    }
+
+                    Spacer()
+                    Text(viewModel.lastRunSummary)
+                        .foregroundStyle(.secondary)
+                        .font(.footnote)
+                }
+
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
                         .foregroundStyle(.red)
                         .font(.footnote)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
-                Spacer()
+                if viewModel.canResetPhotosPermission {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Button(viewModel.isResettingPhotosPermission ? "Resetting Photos Permission…" : "Reset Photos Permission") {
+                            viewModel.resetPhotosPermission()
+                        }
+                        .disabled(viewModel.isResettingPhotosPermission)
+
+                        Text("Runs: \(viewModel.photosPermissionResetCommand)")
+                            .foregroundStyle(.secondary)
+                            .font(.caption2)
+                            .textSelection(.enabled)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                Divider()
+
+                HStack(spacing: 12) {
+                    Text("Version \(viewModel.currentAppVersion)")
+                        .foregroundStyle(.secondary)
+                        .font(.footnote)
+
+                    Button(viewModel.isCheckingForUpdates ? "Checking…" : "Check for Updates") {
+                        viewModel.checkForUpdates()
+                    }
+                    .disabled(viewModel.isCheckingForUpdates)
+                    .font(.footnote)
+
+                    if let result = viewModel.updateCheckResult {
+                        if result.isUpdateAvailable {
+                            Button("Version \(result.latestVersion) available — Open release page") {
+                                viewModel.openLatestRelease()
+                            }
+                            .foregroundStyle(.blue)
+                            .font(.footnote)
+                        } else {
+                            Text("App is up to date")
+                                .foregroundStyle(.secondary)
+                                .font(.footnote)
+                        }
+                    }
+
+                    if let updateError = viewModel.updateCheckError {
+                        Text(updateError)
+                            .foregroundStyle(.red)
+                            .font(.footnote)
+                    }
+
+                    Spacer()
+                }
             }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
+            .padding(.top, max(22, proxy.safeAreaInsets.top + 8))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .padding(.horizontal, 16)
-        .padding(.bottom, 16)
-        .padding(.top, 22)
         .frame(minWidth: 840, minHeight: 560)
         .onAppear {
             NSApp.activate(ignoringOtherApps: true)
