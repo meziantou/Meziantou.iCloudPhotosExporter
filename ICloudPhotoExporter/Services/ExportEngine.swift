@@ -58,7 +58,7 @@ final class ExportEngine: @unchecked Sendable {
     private let photoLibraryService: PhotoLibraryService
     private let manifestStore: ExportManifestStore
     private let fileManager: FileManager
-    private let logger = Logger(subsystem: "com.meziantou.icloudphotoexporter", category: "ExportEngine")
+    private let logger = Logger(subsystem: "com.meziantou.icloudphotosexporter", category: "ExportEngine")
     private let maxConcurrentAssetTasks: Int
 
     init(
@@ -550,7 +550,7 @@ final class ExportEngine: @unchecked Sendable {
 
     private func writeAssetResource(_ resource: PHAssetResource, destinationURL: URL) async throws {
         let destinationDirectoryURL = destinationURL.deletingLastPathComponent()
-        let temporaryFilename = ".\(destinationURL.lastPathComponent).icloudphotoexporter.tmp.\(UUID().uuidString)"
+        let temporaryFilename = ".\(destinationURL.lastPathComponent).icloudphotosexporter.tmp.\(UUID().uuidString)"
         let temporaryURL = destinationDirectoryURL.appendingPathComponent(temporaryFilename, isDirectory: false)
 
         do {

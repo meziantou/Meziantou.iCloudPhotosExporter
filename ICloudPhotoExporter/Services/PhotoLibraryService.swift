@@ -41,7 +41,7 @@ final class PhotoLibraryService {
             return bundleID
         }
 
-        return "com.meziantou.icloudphotoexporter"
+        return "com.meziantou.icloudphotosexporter"
     }
 
     static func photosPermissionResetCommand() -> String {

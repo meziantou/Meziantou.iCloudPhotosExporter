@@ -1,4 +1,4 @@
-# iCloud Photo Exporter (macOS)
+# iCloud Photos Exporter (macOS)
 
 Menu bar macOS app (Swift + Xcode) that exports Apple Photos/iCloud assets to local folders with incremental sync.
 
@@ -44,7 +44,7 @@ Menu bar macOS app (Swift + Xcode) that exports Apple Photos/iCloud assets to lo
   1. Builds the app in Release mode on macOS runner
   2. Signs the app bundle (Developer ID if secrets are configured, ad-hoc fallback otherwise)
   3. Optionally notarizes and staples the app when notarization secrets are configured
-  4. Packages binaries as zip files, including a local helper script (`Open-ICloudPhotoExporter.command`) to clear quarantine and open the app on non-notarized local installs
+  4. Packages binaries as zip files, including a local helper script (`Open-ICloudPhotosExporter.command`) to clear quarantine and open the app on non-notarized local installs
   5. Uploads workflow artifacts with **1 day** retention
   6. Creates/updates a GitHub release and attaches the binaries
 - Optional secrets for fully trusted macOS distribution:
@@ -69,10 +69,10 @@ Menu bar macOS app (Swift + Xcode) that exports Apple Photos/iCloud assets to lo
 
 - PhotoKit access requires Photos permission at runtime.
 - If Photos permission appears stuck after re-signing or changing signing identity, reset the app's Photos TCC entry and retry:
-  `tccutil reset Photos com.meziantou.icloudphotoexporter`
+  `tccutil reset Photos com.meziantou.icloudphotosexporter`
 - PhotoKit exports from the current **System Photo Library**. `Shared albums` mode exports assets from iCloud Shared Albums in that system library, either from all shared albums or only selected albums.
 - Configured export root folders must already exist; the app does not create missing roots. Date-based subfolders under an existing root are created automatically.
 - Export writes are finalized atomically at the destination path (temporary file in destination folder + atomic replace/move), and manifest state is persisted after each successful asset export to reduce crash recovery gaps.
 - iCloud-only assets may download during export and can take longer.
 - The app stores configuration and manifest under:
-  `~/Library/Application Support/ICloudPhotoExporter/`
+  `~/Library/Application Support/ICloudPhotosExporter/`

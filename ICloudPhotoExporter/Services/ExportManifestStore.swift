@@ -9,7 +9,7 @@ actor ExportManifestStore {
     init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
         let appSupportDirectory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let rootDirectory = appSupportDirectory.appendingPathComponent("ICloudPhotoExporter", isDirectory: true)
+        let rootDirectory = appSupportDirectory.appendingPathComponent("ICloudPhotosExporter", isDirectory: true)
         self.manifestURL = rootDirectory.appendingPathComponent("manifest.json", isDirectory: false)
 
         let preciseDateFormatter = ISO8601DateFormatter()

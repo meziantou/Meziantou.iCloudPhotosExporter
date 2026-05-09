@@ -89,7 +89,7 @@ final class AppViewModel: ObservableObject {
         photoLibraryService: PhotoLibraryService(),
         manifestStore: ExportManifestStore()
     )
-    private let logger = Logger(subsystem: "com.meziantou.icloudphotoexporter", category: "AppViewModel")
+    private let logger = Logger(subsystem: "com.meziantou.icloudphotosexporter", category: "AppViewModel")
     private static let automaticUpdateCheckIntervalNanoseconds: UInt64 = 86_400_000_000_000
     private var automaticUpdateCheckTask: Task<Void, Never>?
 
@@ -593,7 +593,7 @@ final class AppViewModel: ObservableObject {
 
 private final class NetworkStatusService {
     private let monitor = NWPathMonitor()
-    private let monitorQueue = DispatchQueue(label: "com.meziantou.icloudphotoexporter.network-monitor")
+    private let monitorQueue = DispatchQueue(label: "com.meziantou.icloudphotosexporter.network-monitor")
     private let lock = NSLock()
     private var latestPath: NWPath?
 
