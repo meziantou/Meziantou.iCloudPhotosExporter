@@ -198,6 +198,11 @@ final class PhotoLibraryService {
     }
 
     private func requestAuthorization() async -> PHAuthorizationStatus {
+        await requestAuthorizationOnMainActor()
+    }
+
+    @MainActor
+    private func requestAuthorizationOnMainActor() async -> PHAuthorizationStatus {
         await withCheckedContinuation { continuation in
             PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
                 continuation.resume(returning: status)
