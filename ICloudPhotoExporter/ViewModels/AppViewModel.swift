@@ -310,7 +310,7 @@ final class AppViewModel: ObservableObject {
 
     private func configureScheduler() {
         exportScheduler.configure(intervalMinutes: configuration.syncIntervalMinutes) { [weak self] in
-            self?.runSyncNow()
+            self?.runScheduledSyncIfAuthorized()
         }
         exportScheduler.setPaused(isSchedulerPaused)
     }
@@ -488,13 +488,25 @@ final class AppViewModel: ObservableObject {
 
         let intervalInSeconds = TimeInterval(max(1, configuration.syncIntervalMinutes) * 60)
         guard let lastSyncAttemptAt = configuration.lastSyncAttemptAt else {
-            runSyncNow()
+            runScheduledSyncIfAuthorized()
             return
         }
 
         if Date().timeIntervalSince(lastSyncAttemptAt) >= intervalInSeconds {
-            runSyncNow()
+            runScheduledSyncIfAuthorized()
         }
+    }
+
+    private func runScheduledSyncIfAuthorized() {
+        let authStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        guard authStatus == .authorized || authStatus == .limited else {
+            if authStatus == .notDetermined {
+                lastRunSummary = "Waiting for Photos permission."
+            }
+            return
+        }
+
+        runSyncNow()
     }
 
     private func persistConfiguration(_ snapshot: AppConfiguration) {
