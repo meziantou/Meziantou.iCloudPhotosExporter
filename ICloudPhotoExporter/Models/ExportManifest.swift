@@ -18,14 +18,47 @@ struct LibraryExportManifest: Codable, Sendable {
     var source: LibraryAssetSource?
     var selectedSharedAlbumIDs: [String]?
     var baselineDate: Date?
+    var adjustmentDataMigrationCompleted: Bool
     var exportedAssets: [String: ExportedAssetRecord]
 
     static let empty = LibraryExportManifest(
         source: nil,
         selectedSharedAlbumIDs: nil,
         baselineDate: nil,
+        adjustmentDataMigrationCompleted: false,
         exportedAssets: [:]
     )
+
+    enum CodingKeys: String, CodingKey {
+        case source
+        case selectedSharedAlbumIDs
+        case baselineDate
+        case adjustmentDataMigrationCompleted
+        case exportedAssets
+    }
+
+    init(
+        source: LibraryAssetSource?,
+        selectedSharedAlbumIDs: [String]?,
+        baselineDate: Date?,
+        adjustmentDataMigrationCompleted: Bool,
+        exportedAssets: [String: ExportedAssetRecord]
+    ) {
+        self.source = source
+        self.selectedSharedAlbumIDs = selectedSharedAlbumIDs
+        self.baselineDate = baselineDate
+        self.adjustmentDataMigrationCompleted = adjustmentDataMigrationCompleted
+        self.exportedAssets = exportedAssets
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        source = try container.decodeIfPresent(LibraryAssetSource.self, forKey: .source)
+        selectedSharedAlbumIDs = try container.decodeIfPresent([String].self, forKey: .selectedSharedAlbumIDs)
+        baselineDate = try container.decodeIfPresent(Date.self, forKey: .baselineDate)
+        adjustmentDataMigrationCompleted = try container.decodeIfPresent(Bool.self, forKey: .adjustmentDataMigrationCompleted) ?? false
+        exportedAssets = try container.decodeIfPresent([String: ExportedAssetRecord].self, forKey: .exportedAssets) ?? [:]
+    }
 }
 
 struct ExportedAssetRecord: Codable, Sendable {

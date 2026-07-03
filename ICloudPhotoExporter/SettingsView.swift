@@ -201,6 +201,8 @@ private struct LibraryEditorView: View {
 
             Toggle("Enabled", isOn: $library.isEnabled)
 
+            Toggle("Export Apple Photos adjustments (.AAE)", isOn: $library.exportAdjustmentData)
+
             HStack {
                 TextField("Output folder", text: $library.outputFolderPath)
                     .textFieldStyle(.roundedBorder)

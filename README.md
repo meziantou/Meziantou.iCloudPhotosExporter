@@ -15,6 +15,7 @@ Menu bar macOS app (Swift + Xcode) that exports Apple Photos/iCloud assets to lo
   - From date
   - From latest photo (recommended for new users)
 - Live Photo export includes both still image and paired video resources (for example `HEIC + MOV`).
+- Edited photos can export Apple Photos adjustment sidecars (`.AAE`) alongside the media.
 - Year/Month output folder layout.
 - Incremental sync via persisted manifest.
 - Parallel sync across enabled library profiles and assets (bounded concurrency).
