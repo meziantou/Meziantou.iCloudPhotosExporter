@@ -148,7 +148,7 @@ final class PhotoLibraryService {
         return result.firstObject
     }
 
-    func preferredResources(for asset: PHAsset) -> [PHAssetResource] {
+    func preferredResources(for asset: PHAsset, includeAdjustmentData: Bool) -> [PHAssetResource] {
         let resources = PHAssetResource.assetResources(for: asset)
         var selected: [PHAssetResource] = []
 
@@ -179,7 +179,19 @@ final class PhotoLibraryService {
             selected.append(fallback)
         }
 
+        if includeAdjustmentData && !selected.isEmpty {
+            for adjustmentResource in adjustmentDataResources(from: resources)
+                where !selected.contains(where: { $0 === adjustmentResource })
+            {
+                selected.append(adjustmentResource)
+            }
+        }
+
         return selected
+    }
+
+    func adjustmentDataResources(for asset: PHAsset) -> [PHAssetResource] {
+        adjustmentDataResources(from: PHAssetResource.assetResources(for: asset))
     }
 
     func writeResourceData(_ resource: PHAssetResource, to destinationURL: URL) async throws {
@@ -223,5 +235,9 @@ final class PhotoLibraryService {
         }
 
         return nil
+    }
+
+    private func adjustmentDataResources(from resources: [PHAssetResource]) -> [PHAssetResource] {
+        resources.filter { $0.type == .adjustmentData }
     }
 }

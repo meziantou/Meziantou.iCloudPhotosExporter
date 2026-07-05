@@ -44,6 +44,7 @@ struct LibraryConfiguration: Identifiable, Codable, Equatable, Sendable {
     var fileNameFormat: String
     var initialSyncMode: InitialSyncMode
     var initialSyncDate: Date?
+    var exportAdjustmentData: Bool
     var isEnabled: Bool
 
     static let defaultFileNameFormat = "{yyyy}{MM}{dd}_{HH}{mm}{ss}_{ID}{ext}"
@@ -57,6 +58,7 @@ struct LibraryConfiguration: Identifiable, Codable, Equatable, Sendable {
         fileNameFormat: String = defaultFileNameFormat,
         initialSyncMode: InitialSyncMode = .newOnly,
         initialSyncDate: Date? = nil,
+        exportAdjustmentData: Bool = true,
         isEnabled: Bool = true
     ) {
         self.id = id
@@ -67,6 +69,7 @@ struct LibraryConfiguration: Identifiable, Codable, Equatable, Sendable {
         self.fileNameFormat = fileNameFormat
         self.initialSyncMode = initialSyncMode
         self.initialSyncDate = initialSyncDate
+        self.exportAdjustmentData = exportAdjustmentData
         self.isEnabled = isEnabled
     }
 
@@ -93,6 +96,7 @@ struct LibraryConfiguration: Identifiable, Codable, Equatable, Sendable {
         case fileNameFormat
         case initialSyncMode
         case initialSyncDate
+        case exportAdjustmentData
         case isEnabled
     }
 
@@ -106,6 +110,7 @@ struct LibraryConfiguration: Identifiable, Codable, Equatable, Sendable {
         fileNameFormat = try container.decodeIfPresent(String.self, forKey: .fileNameFormat) ?? LibraryConfiguration.defaultFileNameFormat
         initialSyncMode = try container.decodeIfPresent(InitialSyncMode.self, forKey: .initialSyncMode) ?? .newOnly
         initialSyncDate = try container.decodeIfPresent(Date.self, forKey: .initialSyncDate)
+        exportAdjustmentData = try container.decodeIfPresent(Bool.self, forKey: .exportAdjustmentData) ?? true
         isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
     }
 }

@@ -98,7 +98,19 @@ final class ExportEngine: @unchecked Sendable {
             library: library,
             libraryManifest: &libraryManifest
         )
+
+        if !library.exportAdjustmentData {
+            libraryManifest.adjustmentDataMigrationCompleted = false
+        }
+
         try await manifestStore.saveLibraryManifest(libraryManifest, for: library.id)
+
+        let adjustmentMigrationOutcome = try await migrateMissingAdjustmentDataIfNeeded(
+            assets: assets,
+            library: library,
+            libraryManifest: &libraryManifest,
+            progress: progress
+        )
 
         let workItems = assets.compactMap { asset -> AssetExportWorkItem? in
             guard shouldProcess(asset: asset, baselineDate: baselineDate) else {
@@ -128,8 +140,8 @@ final class ExportEngine: @unchecked Sendable {
         return LibrarySyncResult(
             libraryID: library.id,
             libraryName: library.name,
-            exportedCount: assetBatchOutcome.exportedCount,
-            skippedCount: assetBatchOutcome.skippedCount
+            exportedCount: adjustmentMigrationOutcome.exportedCount + assetBatchOutcome.exportedCount,
+            skippedCount: adjustmentMigrationOutcome.skippedCount + assetBatchOutcome.skippedCount
         )
     }
 
@@ -181,6 +193,151 @@ final class ExportEngine: @unchecked Sendable {
         }
 
         return assetDate >= baselineDate
+    }
+
+    private func migrateMissingAdjustmentDataIfNeeded(
+        assets: [PHAsset],
+        library: LibraryConfiguration,
+        libraryManifest: inout LibraryExportManifest,
+        progress: ((ExportProgressUpdate) async -> Void)?
+    ) async throws -> AssetBatchOutcome {
+        guard library.exportAdjustmentData else {
+            return AssetBatchOutcome(exportedCount: 0, skippedCount: 0)
+        }
+
+        guard !libraryManifest.adjustmentDataMigrationCompleted else {
+            return AssetBatchOutcome(exportedCount: 0, skippedCount: 0)
+        }
+
+        guard !libraryManifest.exportedAssets.isEmpty else {
+            libraryManifest.adjustmentDataMigrationCompleted = true
+            try await manifestStore.saveLibraryManifest(libraryManifest, for: library.id)
+            return AssetBatchOutcome(exportedCount: 0, skippedCount: 0)
+        }
+
+        let destinationPathCoordinator = DestinationPathCoordinator(fileManager: fileManager)
+        var exportedAssetCount = 0
+
+        for asset in assets {
+            guard let existingRecord = libraryManifest.exportedAssets[asset.localIdentifier] else {
+                continue
+            }
+
+            let adjustmentResources = photoLibraryService.adjustmentDataResources(for: asset)
+            guard !adjustmentResources.isEmpty else {
+                continue
+            }
+
+            let mediaResources = photoLibraryService.preferredResources(
+                for: asset,
+                includeAdjustmentData: false
+            )
+            guard !mediaResources.isEmpty else {
+                logger.debug("Skipping adjustment data migration for asset \(asset.localIdentifier, privacy: .public): original media resource is missing")
+                continue
+            }
+
+            var updatedRecord = normalizedRecordForAdjustmentDataMigration(
+                existingRecord,
+                mediaResources: mediaResources
+            )
+            let originalRecord = updatedRecord
+
+            guard let primaryMediaOutputPath = firstExistingMediaOutputPath(in: updatedRecord) else {
+                logger.debug("Skipping adjustment data migration for asset \(asset.localIdentifier, privacy: .public): original media file is missing")
+                continue
+            }
+
+            let primaryMediaURL = URL(fileURLWithPath: primaryMediaOutputPath, isDirectory: false)
+            var exportedAdjustmentForAsset = false
+
+            for adjustmentResource in adjustmentResources {
+                let adjustmentResourceKey = resourceKey(for: adjustmentResource)
+                if let existingAdjustmentPath = preferredExistingPath(
+                    for: adjustmentResourceKey,
+                    existingRecord: updatedRecord
+                ), fileManager.fileExists(atPath: existingAdjustmentPath) {
+                    continue
+                }
+
+                let destinationURL = try await destinationURL(
+                    for: asset,
+                    resource: adjustmentResource,
+                    rootDirectory: library.outputFolderURL,
+                    fileNameFormat: library.fileNameFormat,
+                    sidecarBaseURL: primaryMediaURL,
+                    preferredExistingPath: preferredExistingPath(
+                        for: adjustmentResourceKey,
+                        existingRecord: updatedRecord
+                    ),
+                    destinationPathCoordinator: destinationPathCoordinator
+                )
+
+                guard !fileManager.fileExists(atPath: destinationURL.path) else {
+                    recordResourceOutput(
+                        resourceKey: adjustmentResourceKey,
+                        outputPath: destinationURL.path,
+                        in: &updatedRecord
+                    )
+                    continue
+                }
+
+                do {
+                    if let progress {
+                        await progress(
+                            ExportProgressUpdate(
+                                libraryID: library.id,
+                                libraryName: library.name,
+                                fileName: destinationURL.lastPathComponent,
+                                destinationPath: destinationURL.path,
+                                state: .copying
+                            )
+                        )
+                    }
+
+                    logger.info("Exporting adjustment data: \(destinationURL.lastPathComponent, privacy: .public)")
+                    try await writeAssetResource(adjustmentResource, destinationURL: destinationURL)
+                    updateFileDates(for: asset, destinationURL: destinationURL)
+                    recordResourceOutput(
+                        resourceKey: adjustmentResourceKey,
+                        outputPath: destinationURL.path,
+                        in: &updatedRecord
+                    )
+                    exportedAdjustmentForAsset = true
+
+                    if let progress {
+                        await progress(
+                            ExportProgressUpdate(
+                                libraryID: library.id,
+                                libraryName: library.name,
+                                fileName: destinationURL.lastPathComponent,
+                                destinationPath: destinationURL.path,
+                                state: .copied
+                            )
+                        )
+                    }
+                } catch {
+                    await destinationPathCoordinator.release(path: destinationURL.path)
+                    throw error
+                }
+            }
+
+            if updatedRecord.resourceKeys != originalRecord.resourceKeys ||
+                updatedRecord.outputPaths != originalRecord.outputPaths
+            {
+                libraryManifest.exportedAssets[asset.localIdentifier] = updatedRecord
+                try await manifestStore.saveLibraryManifest(libraryManifest, for: library.id)
+            }
+
+            if exportedAdjustmentForAsset {
+                exportedAssetCount += 1
+            }
+        }
+
+        libraryManifest.adjustmentDataMigrationCompleted = true
+        try await manifestStore.saveLibraryManifest(libraryManifest, for: library.id)
+
+        return AssetBatchOutcome(exportedCount: exportedAssetCount, skippedCount: 0)
     }
 
     private func synchronizeAssets(
@@ -261,7 +418,10 @@ final class ExportEngine: @unchecked Sendable {
         }
 
         let effectiveModificationDate = asset.modificationDate ?? asset.creationDate
-        let resources = photoLibraryService.preferredResources(for: asset)
+        let resources = photoLibraryService.preferredResources(
+            for: asset,
+            includeAdjustmentData: library.exportAdjustmentData
+        )
         guard !resources.isEmpty else {
             logger.warning("Skipping asset \(asset.localIdentifier, privacy: .public): no exportable resource")
             return AssetExportOutcome(
@@ -290,6 +450,7 @@ final class ExportEngine: @unchecked Sendable {
         var exportedResourceKeys: [String] = []
         outputPaths.reserveCapacity(resources.count)
         exportedResourceKeys.reserveCapacity(resources.count)
+        var primaryMediaDestinationURL: URL?
 
         for (index, resource) in resources.enumerated() {
             let destinationURL = try await destinationURL(
@@ -297,6 +458,7 @@ final class ExportEngine: @unchecked Sendable {
                 resource: resource,
                 rootDirectory: library.outputFolderURL,
                 fileNameFormat: library.fileNameFormat,
+                sidecarBaseURL: isAdjustmentDataResource(resource) ? primaryMediaDestinationURL : nil,
                 preferredExistingPath: preferredExistingPath(
                     for: resourceKeys[index],
                     existingRecord: workItem.existingRecord
@@ -317,10 +479,17 @@ final class ExportEngine: @unchecked Sendable {
                     )
                 }
 
+                if isAdjustmentDataResource(resource) {
+                    logger.info("Exporting adjustment data: \(destinationURL.lastPathComponent, privacy: .public)")
+                }
+
                 try await writeAssetResource(resource, destinationURL: destinationURL)
                 updateFileDates(for: asset, destinationURL: destinationURL)
                 outputPaths.append(destinationURL.path)
                 exportedResourceKeys.append(resourceKeys[index])
+                if !isAdjustmentDataResource(resource), primaryMediaDestinationURL == nil {
+                    primaryMediaDestinationURL = destinationURL
+                }
 
                 if let progress {
                     await progress(
@@ -370,6 +539,14 @@ final class ExportEngine: @unchecked Sendable {
         "\(resource.type.rawValue)|\(resource.originalFilename)"
     }
 
+    private func isAdjustmentDataResource(_ resource: PHAssetResource) -> Bool {
+        resource.type == .adjustmentData
+    }
+
+    private func isAdjustmentDataResourceKey(_ resourceKey: String) -> Bool {
+        resourceKey.hasPrefix("\(PHAssetResourceType.adjustmentData.rawValue)|")
+    }
+
     private func shouldSkipExport(
         existingRecord: ExportedAssetRecord?,
         effectiveModificationDate: Date?,
@@ -383,15 +560,14 @@ final class ExportEngine: @unchecked Sendable {
             return false
         }
 
-        guard isExistingRecordCompatible(existingRecord, resourceKeys: resourceKeys) else {
+        guard let outputPaths = existingOutputPaths(
+            for: resourceKeys,
+            in: existingRecord
+        ), !outputPaths.isEmpty else {
             return false
         }
 
-        guard !existingRecord.outputPaths.isEmpty else {
-            return false
-        }
-
-        return existingRecord.outputPaths.allSatisfy { outputPath in
+        return outputPaths.allSatisfy { outputPath in
             fileManager.fileExists(atPath: outputPath)
         }
     }
@@ -408,13 +584,29 @@ final class ExportEngine: @unchecked Sendable {
         }
     }
 
-    private func isExistingRecordCompatible(_ existingRecord: ExportedAssetRecord, resourceKeys: [String]) -> Bool {
+    private func existingOutputPaths(for resourceKeys: [String], in existingRecord: ExportedAssetRecord) -> [String]? {
         if existingRecord.resourceKeys.isEmpty {
-            return resourceKeys.count == 1 && existingRecord.outputPaths.count == 1
+            guard resourceKeys.count == 1 && existingRecord.outputPaths.count == 1 else {
+                return nil
+            }
+
+            return existingRecord.outputPaths
         }
 
-        return existingRecord.resourceKeys == resourceKeys &&
-            existingRecord.outputPaths.count == resourceKeys.count
+        var outputPaths: [String] = []
+        outputPaths.reserveCapacity(resourceKeys.count)
+
+        for resourceKey in resourceKeys {
+            guard let index = existingRecord.resourceKeys.firstIndex(of: resourceKey),
+                  existingRecord.outputPaths.indices.contains(index)
+            else {
+                return nil
+            }
+
+            outputPaths.append(existingRecord.outputPaths[index])
+        }
+
+        return outputPaths
     }
 
     private func preferredExistingPath(for resourceKey: String, existingRecord: ExportedAssetRecord?) -> String? {
@@ -435,6 +627,56 @@ final class ExportEngine: @unchecked Sendable {
         return existingRecord.outputPaths[index]
     }
 
+    private func normalizedRecordForAdjustmentDataMigration(
+        _ existingRecord: ExportedAssetRecord,
+        mediaResources: [PHAssetResource]
+    ) -> ExportedAssetRecord {
+        guard existingRecord.resourceKeys.isEmpty else {
+            return existingRecord
+        }
+
+        var normalizedRecord = existingRecord
+        let mediaResourceKeys = mediaResources.map(resourceKey(for:))
+        let mappedResourceCount = min(mediaResourceKeys.count, normalizedRecord.outputPaths.count)
+        normalizedRecord.resourceKeys = Array(mediaResourceKeys.prefix(mappedResourceCount))
+        return normalizedRecord
+    }
+
+    private func firstExistingMediaOutputPath(in existingRecord: ExportedAssetRecord) -> String? {
+        if existingRecord.resourceKeys.isEmpty {
+            return existingRecord.outputPaths.first { outputPath in
+                fileManager.fileExists(atPath: outputPath)
+            }
+        }
+
+        for (index, resourceKey) in existingRecord.resourceKeys.enumerated()
+            where !isAdjustmentDataResourceKey(resourceKey) && existingRecord.outputPaths.indices.contains(index)
+        {
+            let outputPath = existingRecord.outputPaths[index]
+            if fileManager.fileExists(atPath: outputPath) {
+                return outputPath
+            }
+        }
+
+        return nil
+    }
+
+    private func recordResourceOutput(
+        resourceKey: String,
+        outputPath: String,
+        in exportedRecord: inout ExportedAssetRecord
+    ) {
+        if let index = exportedRecord.resourceKeys.firstIndex(of: resourceKey),
+           exportedRecord.outputPaths.indices.contains(index)
+        {
+            exportedRecord.outputPaths[index] = outputPath
+            return
+        }
+
+        exportedRecord.resourceKeys.append(resourceKey)
+        exportedRecord.outputPaths.append(outputPath)
+    }
+
     private func canSkipResourceFailure(_ error: Error, for resource: PHAssetResource) -> Bool {
         guard resource.type == .pairedVideo else {
             return false
@@ -453,10 +695,12 @@ final class ExportEngine: @unchecked Sendable {
         resource: PHAssetResource,
         rootDirectory: URL,
         fileNameFormat: String,
+        sidecarBaseURL: URL?,
         preferredExistingPath: String?,
         destinationPathCoordinator: DestinationPathCoordinator
     ) async throws -> URL {
-        let directoryURL = exportDirectory(for: asset, rootDirectory: rootDirectory)
+        let directoryURL = sidecarBaseURL?.deletingLastPathComponent() ??
+            exportDirectory(for: asset, rootDirectory: rootDirectory)
         try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
 
         let originalFilename = resource.originalFilename
@@ -466,9 +710,19 @@ final class ExportEngine: @unchecked Sendable {
             originalFilename: originalFilename,
             uti: resource.uniformTypeIdentifier
         )
+        let destinationFilename: String
+        if let sidecarBaseURL {
+            destinationFilename = sidecarFilename(
+                from: sanitizedFilename,
+                sidecarBaseURL: sidecarBaseURL
+            )
+        } else {
+            destinationFilename = sanitizedFilename
+        }
+
         return await destinationPathCoordinator.reserveAvailableURL(
             directoryURL: directoryURL,
-            filename: sanitizedFilename,
+            filename: destinationFilename,
             preferredExistingPath: preferredExistingPath
         )
     }
@@ -499,6 +753,15 @@ final class ExportEngine: @unchecked Sendable {
         return rootDirectory
             .appendingPathComponent(String(format: "%04d", year), isDirectory: true)
             .appendingPathComponent(String(format: "%02d", month), isDirectory: true)
+    }
+
+    private func sidecarFilename(from sanitizedFilename: String, sidecarBaseURL: URL) -> String {
+        let sidecarExtension = (sanitizedFilename as NSString).pathExtension
+        guard !sidecarExtension.isEmpty else {
+            return sanitizedFilename
+        }
+
+        return "\(sidecarBaseURL.deletingPathExtension().lastPathComponent).\(sidecarExtension)"
     }
 
     private func applyFileNameFormat(
